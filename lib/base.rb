@@ -44,7 +44,7 @@ module StateManager
 
       from_state = current_state
       to_state = enter_states.last
-      will_transition(from_state, to_state)
+      will_transition(from_state, to_state, current_event)
 
       # Invoke the enter/exit callbacks
       exit_states.each{ |s| s.exit(self) }
@@ -53,13 +53,13 @@ module StateManager
       self.current_state = to_state
       write_state
 
-      did_transition(from_state, to_state)
+      did_transition(from_state, to_state, current_event)
     end
 
-    def will_transition(from, to)
+    def will_transition(from, to, event)
     end
 
-    def did_transition(from, to)
+    def did_transition(from, to, event)
     end
 
     # Find the states along the path from a start state
@@ -83,9 +83,11 @@ module StateManager
     # Send an event to the current state. This method will walk the current
     # state's path and find the first state which responds to the event.
     def send_event!(event, *args)
+      self.current_event = event
       state = find_state_for_event(event)
       raise(InvalidEvent, event) unless state
       state.send event, self, *args
+      self.current_event = nil
     end
 
     def respond_to_event?(event)
@@ -114,6 +116,8 @@ module StateManager
     end
 
     protected
+
+    attr_accessor :current_event
 
     def read_initial_state
       self.current_state = if target.state

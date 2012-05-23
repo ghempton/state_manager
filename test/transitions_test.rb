@@ -48,18 +48,20 @@ class UserStates < StateManager::Base
     event :unban, :transitions_to => 'active.default'
   end
 
-  attr_accessor :will_current_state, :will_from, :will_to
-  def will_transition(from, to)
+  attr_accessor :will_current_state, :will_from, :will_to, :will_event
+  def will_transition(from, to, event)
     self.will_current_state = current_state
     self.will_from = from
     self.will_to = to
+    self.will_event = event
   end
 
-  attr_accessor :did_current_state, :did_from, :did_to
-  def did_transition(from, to)
+  attr_accessor :did_current_state, :did_from, :did_to, :did_event
+  def did_transition(from, to, event)
     self.did_current_state = current_state
     self.did_from = from
     self.did_to = to
+    self.did_event = event
   end
 
 end
@@ -107,15 +109,17 @@ class TransitionsTest < Test::Unit::TestCase
   end
 
   def test_handlers
-    @user_states.transition_to(:banned)
+    @user_states.ban!
 
     assert_equal 'unregistered', @user_states.will_current_state.to_s
     assert_equal 'unregistered', @user_states.will_from.to_s
     assert_equal 'banned', @user_states.will_to.to_s
+    assert_equal :ban, @user_states.will_event
 
     assert_equal 'banned', @user_states.did_current_state.to_s
-    assert_equal 'unregistered', @user_states.will_from.to_s
-    assert_equal 'banned', @user_states.will_to.to_s
+    assert_equal 'unregistered', @user_states.did_from.to_s
+    assert_equal 'banned', @user_states.did_to.to_s
+    assert_equal :ban, @user_states.did_event
   end
 
 end
