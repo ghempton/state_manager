@@ -12,10 +12,9 @@ module StateManager
       self.events = self.events.dup
       self.events << name.to_sym
       transitions_to = options[:transitions_to]
-      define_method name do | *args |
-        result = block.call(args) if block
+      define_method name do | manager, *args |
+        result = manager.instance_exec *args, &block if block
         if(transitions_to)
-          manager = args[0]
           manager.transition_to(transitions_to)
         end
         result

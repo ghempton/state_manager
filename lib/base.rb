@@ -12,6 +12,7 @@ module StateManager
 
     class_attribute :initial_state
     attr_accessor :target, :options, :current_state
+    alias :resource :target
   
     def initialize(target, options={})
       super(nil, nil)
@@ -24,6 +25,7 @@ module StateManager
     # Transitions to the state at the specified path. The path can be relative
     # to any state along the current state's path.
     def transition_to(path)
+      path = path.to_s
       state = current_state
       exit_states = []
 
@@ -40,12 +42,24 @@ module StateManager
       enter_states = new_states - exit_states
       exit_states = exit_states - new_states
 
+      from_state = current_state
+      to_state = enter_states.last
+      will_transition(from_state, to_state)
+
       # Invoke the enter/exit callbacks
       exit_states.each{ |s| s.exit(self) }
       enter_states.each{ |s| s.enter(self) }
 
-      self.current_state = enter_states.last
+      self.current_state = to_state
       write_state
+
+      did_transition(from_state, to_state)
+    end
+
+    def will_transition(from, to)
+    end
+
+    def did_transition(from, to)
     end
 
     # Find the states along the path from a start state

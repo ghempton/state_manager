@@ -30,21 +30,18 @@ module StateManager
       path
     end
 
-    # Array of all states along the path (including this state)
-    def path_states
-      state = self
-      ret = []
-      while(state.parent_state) do
-        ret << state
-        state = state.parent_state
-      end
-      ret
-    end
-
     def enter(manager)
     end
 
     def exit(manager)
+    end
+
+    def to_s
+      "#{path}"
+    end
+
+    def to_sym
+      path.to_sym
     end
 
     protected
