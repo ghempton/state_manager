@@ -1,5 +1,5 @@
-require 'state'
 require 'dsl'
+require 'state'
 
 module StateManager
  
@@ -10,10 +10,7 @@ module StateManager
   # of an object as well as managing the transitions between states.
   class Base < State
 
-    class << self
-      attr_accessor :initial_state
-    end
-
+    class_attribute :initial_state
     attr_accessor :target, :options, :current_state
   
     def initialize(target, options={})
@@ -24,6 +21,8 @@ module StateManager
       read_initial_state
     end
 
+    # Transitions to the state at the specified path. The path can be relative
+    # to any state along the current state's path.
     def transition_to(path)
       state = current_state
       exit_states = []
@@ -61,13 +60,14 @@ module StateManager
       ret
     end
 
+    # Returns the state at the given path
     def find_state(path)
       states = find_states(self, path)
       states && states.last
     end
 
     # Send an event to the current state. This method will walk the current
-    # state's tree and find the first state which responds to the event.
+    # state's path and find the first state which responds to the event.
     def send_event!(event, *args)
       state = find_state_for_event(event)
       raise(InvalidEvent, event) unless state
@@ -86,6 +86,19 @@ module StateManager
       end
     end
 
+    # Returns true if the underlying object is in the state specified by the
+    # given path. An object is 'in' a state if the state lies at any point of
+    # the current state's path. E.g:
+    #
+    #     state_manager.current_state.path # returns 'outer.inner'
+    #     state_manager.in_state? 'outer' # true
+    #     state_manager.in_state? 'outer.inner' # true
+    #     state_manager.in_state? 'inner' # false
+    #
+    def in_state?(path)
+      find_states(self, current_state.path).include? find_state(path) 
+    end
+
     protected
 
     def read_initial_state
@@ -94,6 +107,7 @@ module StateManager
       elsif self.class.initial_state
         find_state(self.class.initial_state.to_s)
       else
+        # TODO: ensure this is a leaf state
         states.first[1]
       end
     end

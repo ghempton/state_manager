@@ -1,5 +1,4 @@
 require 'dsl'
-require 'pry'
 require 'active_support/core_ext'
 
 module StateManager
@@ -8,9 +7,8 @@ module StateManager
     class_attribute :states
     self.states = {}
 
-    class << self
-      include StateManager::DSL::State
-    end
+    class_attribute :events
+    self.events = []
 
     attr_reader :name, :states, :parent_state
 
@@ -24,10 +22,23 @@ module StateManager
       end
     end
 
+    # String representing the path of the current state, e.g.:
+    # 'parentState.childState'
     def path
       path = name.to_s
       path = "#{parent_state.path}.#{path}" if parent_state && parent_state.name
       path
+    end
+
+    # Array of all states along the path (including this state)
+    def path_states
+      state = self
+      ret = []
+      while(state.parent_state) do
+        ret << state
+        state = state.parent_state
+      end
+      ret
     end
 
     def enter(manager)
