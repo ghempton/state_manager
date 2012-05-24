@@ -1,4 +1,4 @@
-# statemanager
+# State Manager
 
 StateManager is a state machine implementation for Ruby that is heavily inspired by the FSM implementation in [Ember.js](http://emberjs.com). Compared to other FSM implementations, it embraces the following features/opinions:
 
