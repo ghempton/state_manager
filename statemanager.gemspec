@@ -9,8 +9,8 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Gordon Hempton"]
-  s.date = "2012-05-23"
-  s.description = "TODO: longer description of your gem"
+  s.date = "2012-05-24"
+  s.description = "Finite state machine implementation that keeps logic separate from model classes and supports sub-states."
   s.email = "ghempton@gmail.com"
   s.extra_rdoc_files = [
     "LICENSE.txt",
@@ -29,15 +29,17 @@ Gem::Specification.new do |s|
     "lib/helpers.rb",
     "lib/state.rb",
     "lib/statemanager.rb",
+    "statemanager.gemspec",
     "test/basic_test.rb",
     "test/helper.rb",
-    "test/helpers_test.rb"
+    "test/helpers_test.rb",
+    "test/transitions_test.rb"
   ]
   s.homepage = "http://github.com/ghempton/statemanager"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
   s.rubygems_version = "1.8.15"
-  s.summary = "TODO: one-line summary of your gem"
+  s.summary = "%Q{Finite state machine implementation.}"
 
   if s.respond_to? :specification_version then
     s.specification_version = 3

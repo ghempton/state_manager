@@ -17,8 +17,8 @@ Jeweler::Tasks.new do |gem|
   gem.name = "statemanager"
   gem.homepage = "http://github.com/ghempton/statemanager"
   gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.summary = "%Q{Finite state machine implementation.}"
+  gem.description = %Q{Finite state machine implementation that keeps logic separate from model classes and supports sub-states.}
   gem.email = "ghempton@gmail.com"
   gem.authors = ["Gordon Hempton"]
   # dependencies defined in Gemfile
