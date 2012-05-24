@@ -4,19 +4,39 @@ require 'active_support/core_ext'
 module StateManager
   class State
 
-    class_attribute :states
-    self.states = {}
+    # Represents the static specification of this state. This consists of all
+    # child states and events. During initialization, the specification will
+    # be read and the child states and events will be initialized.
+    class Specification
+      attr_accessor :states, :events
 
-    class_attribute :events
-    self.events = []
+      def initialize
+        self.states = {}
+        self.events = []
+      end
+
+      def initialize_copy(source)
+        self.states = source.states.dup
+        self.events = source.events.dup
+      end
+    end
+
+    class_attribute :specification
+    self.specification = Specification.new
+
+    def self.inherited(child)
+      # Give all sublcasses a clone of this states specification. Subclasses can
+      # add events and states to their specification without affecting the
+      # parent
+      child.specification = specification.clone
+    end
 
     attr_reader :name, :states, :parent_state
 
     def initialize(name=nil, parent_state=nil)
       self.name = name
       self.parent_state = parent_state
-      self.class.states ||= {}
-      self.states = self.class.states.inject({}) do |states, (name, klazz)|
+      self.states = self.class.specification.states.inject({}) do |states, (name, klazz)|
         states[name] = klazz.new(name, self)
         states
       end
@@ -42,6 +62,16 @@ module StateManager
 
     def to_sym
       path.to_sym
+    end
+
+    # Get the target stored on the state manager
+    def target
+      parent_state.target
+    end
+    alias :resource :target
+
+    def transition_to(*args)
+      parent_state.transition_to(*args)
     end
 
     protected
