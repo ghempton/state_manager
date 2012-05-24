@@ -2,9 +2,9 @@
 
 StateManager is a state machine implementation for Ruby that is heavily inspired by the FSM implementation in [Ember.js](http://emberjs.com). Compared to other FSM implementations, it embraces the following features/opinions:
 
-* State logic should not pollute model classes and should be kept separate from model definitions.
-* State events should have access to a scope (the current user).
-* Sub-states are supported and encouraged.
+* State logic should not pollute model classes.
+* State events should have access to a scope (e.g. the current user).
+* Substates are supported and encouraged.
 
 ## Getting Started
 
@@ -14,13 +14,7 @@ Install the `statemanager` gem. If you are using bundler, add the following to y
 gem 'statemanager'
 ```
 
-Generate a state manager for a model:
-
-```
-rails generate statemanager post
-```
-
-This will create a file, `app/states/post_states.rb`. Edit this file and define your states:
+After the gem is installed, create a file to contain the definition of your state manager, e.g. `app/states/post_states.rb`. Edit this file and define your states:
 
 ```ruby
 class PostStates < StateManager::Base
@@ -51,16 +45,15 @@ state_manager.current_state.name # returns 'unsubmitted'
 state_manager.submit! # invokes the submit event
 state_manager.current_state.name # returns 'submitted.awaiting_review'
 state_manager.submitted? # returns true
-state_manager.awaiting_review? # returns true
 state_manager.submitted_awaiting_review? # returns true
 state_manager.submitted_reviewing? # returns false
 ```
 
-StateManager works by reading and modifying the `state` property of the passed in object. You can specify a different property by setting the `state_property` property on the manager.
+StateManager works by reading and modifying the `state` property of the passed in object.
 
 ## Handling Events
 
-Most applications will require special logic to be performed during state transitions. Handlers can be defined by either passing in a block to the event definitions or by specifying a handler method:
+Most applications will require special logic to be performed during state transitions. Handlers can be defined by passing a block to the event definition:
 
 ```ruby
 state :reviewing do
@@ -69,30 +62,28 @@ state :reviewing do
   end
   event :clarify, :transitions_to => 'submitted.clarifying', :handler => :clarify
 event
-
-def clarify
-  # alternatively you can specify a handler method, you do not need to specify the handler method name if it is the same as the event
-end
 ```
 
-## Reading State
+## Model Helpers
 
-Rather than having to always create a StateManager instance, shortcut methods are available to read the state of an object. To enable this, include the `Stateful` mixin:
+Rather than having to always create a StateManager instance, shortcut methods are available to model classes. To enable this, extend the `StateManager::Helpers` module:
 
 ```ruby
 class Post
-  include Stateful
+  attr_accessor :state
+  extend StateManager::Helpers
+  stateful :state, PostStates
 end
 ```
 
-This assumes the existence of a `PostStates` class on the load path. Alternatively, a different StateManager class can be specified by setting the `state_manager_class` property. After the mixin has been added, properties are availabe on the model class itself:
+This assumes the existence of a `PostStates` class on the load path. After the mixin has been added, properties are availabe on the model class itself:
 
 ```ruby
 post.unsubmitted? # returns true
-post.submit! # does not work, only read methods are available
+post.submit! # sends the submit event
 ```
 
-Because of the contextual nature of events (e.g. requiring the current user), methods which modify the state are not available on the object.
+The one caveat with this approach is that the state manager is initialized without any context.
 
 ## Contributing to statemanager
  
