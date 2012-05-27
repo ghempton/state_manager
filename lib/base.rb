@@ -11,22 +11,25 @@ module StateManager
   class Base < State
 
     class_attribute :initial_state
-    attr_accessor :target, :options, :current_state
+    class_attribute :default_options
+    self.default_options = {:state_property => :state}
+
+    attr_accessor :target, :options
     alias :resource :target
   
     def initialize(target, options={})
       super(nil, nil)
       self.target = target
-      self.options = options
+      self.options = self.class.default_options.merge(options)
 
-      read_initial_state
+      transition_to(initial_state.path) unless current_state
     end
 
     # Transitions to the state at the specified path. The path can be relative
     # to any state along the current state's path.
     def transition_to(path)
       path = path.to_s
-      state = current_state
+      state = current_state || self
       exit_states = []
 
       # Find the nearest parent state on the path of the current state which
@@ -47,11 +50,10 @@ module StateManager
       will_transition(from_state, to_state, current_event)
 
       # Invoke the enter/exit callbacks
-      exit_states.each{ |s| s.exit(self) }
-      enter_states.each{ |s| s.enter(self) }
+      exit_states.each{ |s| s.exit }
+      enter_states.each{ |s| s.enter }
 
       self.current_state = to_state
-      write_state
 
       did_transition(from_state, to_state, current_event)
     end
@@ -80,13 +82,31 @@ module StateManager
       states && states.last
     end
 
+    def current_state
+      path = read_state
+      find_state(path) if path
+    end
+
+    def initial_state
+      if self.class.initial_state
+        find_state(self.class.initial_state.to_s)
+      else
+        # TODO: ensure this is a leaf state
+        states.first[1]
+      end
+    end
+
+    def current_state=(value)
+      write_state(value)
+    end
+
     # Send an event to the current state. This method will walk the current
     # state's path and find the first state which responds to the event.
     def send_event!(event, *args)
       self.current_event = event
       state = find_state_for_event(event)
       raise(InvalidEvent, event) unless state
-      state.send event, self, *args
+      state.send event, *args
       self.current_event = nil
     end
 
@@ -102,6 +122,10 @@ module StateManager
       end
     end
 
+    def state_manager
+      self
+    end
+
     # Returns true if the underlying object is in the state specified by the
     # given path. An object is 'in' a state if the state lies at any point of
     # the current state's path. E.g:
@@ -115,24 +139,18 @@ module StateManager
       find_states(self, current_state.path).include? find_state(path) 
     end
 
+    # These methods can be overriden by an adapter
+    def write_state(value)
+      target.send "#{options[:state_property].to_s}=", value.path
+    end
+
+    def read_state
+      target.send options[:state_property]
+    end
+
     protected
 
     attr_accessor :current_event
-
-    def read_initial_state
-      self.current_state = if target.state
-        find_state(target.state.to_s)
-      elsif self.class.initial_state
-        find_state(self.class.initial_state.to_s)
-      else
-        # TODO: ensure this is a leaf state
-        states.first[1]
-      end
-    end
-
-    def write_state
-      target.state = current_state.path
-    end
 
   end
 

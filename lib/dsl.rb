@@ -2,19 +2,31 @@ require 'state'
 
 module StateManager
   module DSL
-    def state(name, klazz=StateManager::State, &block)
-      klazz = Class.new(klazz, &block)
-      specification.states[name.to_sym] = klazz
+
+    # Specifies a state that is a child of the current state
+    def state(name, base_class=nil, &block)
+      # If no base class is specified we look for a class inside the current
+      # state's class which has the same name as the state
+      base_class ||= if self.const_defined?(name.capitalize)
+        self.const_get(name.capitalize)
+      else
+        StateManager::State
+      end
+      klass = Class.new(base_class, &block)
+      specification.states[name.to_sym] = klass
     end
 
+    # Specifies an event on the current state
     def event(name, options={}, &block)
-      specification.events << name.to_sym
+      name = name.to_sym
+      specification.events << name
       transitions_to = options[:transitions_to]
-      # TODO check for pre-defined method
-      define_method name do | manager, *args |
-        result = instance_exec *args, &block if block
+      has_super = method_defined? name
+      define_method name do | *args |
+        result = super(*args) if has_super
+        result = (instance_exec *args, &block if block) || result
         if(transitions_to)
-          manager.transition_to(transitions_to)
+          transition_to(transitions_to)
         end
         result
       end

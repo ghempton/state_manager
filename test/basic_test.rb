@@ -1,34 +1,34 @@
 require 'helper'
 
-class Post
-  attr_accessor :state
-end
-
-class PostStates < StateManager::Base
-  state :unsubmitted do
-    event :submit, :transitions_to => 'submitted.awaiting_review'
-  end
-  state :submitted do
-    state :awaiting_review do
-      event :review, :transitions_to => 'submitted.reviewing'
-    end
-    state :reviewing do
-      event :accept, :transitions_to => 'active'
-      event :clarify, :transitions_to => 'submitted.clarifying'
-    end
-    state :clarifying do
-      event :review, :transitions_to => 'submitted.reviewing'
-    end
-  end
-  state :active
-  state :rejected
-end
-
-class PostStatesWithInitialState < PostStates
-  self.initial_state = 'submitted.awaiting_review'
-end
-
 class BasicTest < Test::Unit::TestCase
+
+  class Post
+    attr_accessor :state
+  end
+
+  class PostStates < StateManager::Base
+    state :unsubmitted do
+      event :submit, :transitions_to => 'submitted.awaiting_review'
+    end
+    state :submitted do
+      state :awaiting_review do
+        event :review, :transitions_to => 'submitted.reviewing'
+      end
+      state :reviewing do
+        event :accept, :transitions_to => 'active'
+        event :clarify, :transitions_to => 'submitted.clarifying'
+      end
+      state :clarifying do
+        event :review, :transitions_to => 'submitted.reviewing'
+      end
+    end
+    state :active
+    state :rejected
+  end
+
+  class PostStatesWithInitialState < PostStates
+    self.initial_state = 'submitted.awaiting_review'
+  end
 
   def setup
     @post = Post.new
@@ -38,10 +38,12 @@ class BasicTest < Test::Unit::TestCase
   def test_initial_states
     assert_equal @post_states.current_state.path, 'unsubmitted', "initial state should be set to the first state"
 
+    @post = Post.new
     sm_initial = PostStatesWithInitialState.new(@post)
 
     assert_equal sm_initial.current_state.path, 'submitted.awaiting_review', "initial state should be set to specified initial state"
 
+    @post = Post.new
     @post.state = 'active'
     @post_states = PostStates.new(@post)
 

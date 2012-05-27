@@ -33,7 +33,7 @@ module StateManager
 
     attr_reader :name, :states, :parent_state
 
-    def initialize(name=nil, parent_state=nil)
+    def initialize(name, parent_state)
       self.name = name
       self.parent_state = parent_state
       self.states = self.class.specification.states.inject({}) do |states, (name, klazz)|
@@ -50,10 +50,10 @@ module StateManager
       path
     end
 
-    def enter(manager)
+    def enter
     end
 
-    def exit(manager)
+    def exit
     end
 
     def to_s
@@ -64,14 +64,18 @@ module StateManager
       path.to_sym
     end
 
+    def state_manager
+      parent_state.state_manager
+    end
+
     # Get the target stored on the state manager
     def target
-      parent_state.target
+      state_manager.target
     end
     alias :resource :target
 
     def transition_to(*args)
-      parent_state.transition_to(*args)
+      state_manager.transition_to(*args)
     end
 
     protected

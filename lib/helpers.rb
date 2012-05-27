@@ -1,8 +1,8 @@
 module StateManager
   # State helper methods. Examples:
   #
-  #    @post.event! # send_event :event
-  #    @post.active? # has_state :active
+  #    @post.event! # send_event! :event
+  #    @post.active? # in_state? :active
   #    @post.can_event? # respond_to_event? :event
   #
   module Helpers
@@ -36,22 +36,10 @@ module StateManager
       end
     end
 
-    def stateful(property, state_manager_klazz)
-      define_method :state_manager do
-        @state_manager ||= state_manager_klazz.new(self)
-      end
-      Methods.define_methods(state_manager_klazz.specification, self)
-    end
-
   end
 
   # Apply the helper methods to the state manager
   class Base
-    # This method is used to make the helper methods compatible on the state
-    # manager itself
-    def state_manager
-      self
-    end
 
     @helpers_initialized = false
     class << self

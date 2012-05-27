@@ -1,32 +1,31 @@
 require 'helper'
 
-class ItemStates < StateManager::Base
-  state :default do
-    event :do_inner, :transitions_to => 'root.outer1.inner'
-  end
-  state :root do
-    state :outer1 do
-      event :next, :transitions_to => 'outer2.inner'
-      state :inner do
-        event :next, :transitions_to => 'inner2'
-      end
-      state :inner2
-    end
-    state :outer2 do
-      state :inner do
-      end
-    end
-  end
-end
-
-class Item
-  attr_accessor :state
-  extend StateManager::Helpers
-
-  stateful :state, ItemStates
-end
-
 class HelpersTest < Test::Unit::TestCase
+
+  class ItemStates < StateManager::Base
+    state :default do
+      event :do_inner, :transitions_to => 'root.outer1.inner'
+    end
+    state :root do
+      state :outer1 do
+        event :next, :transitions_to => 'outer2.inner'
+        state :inner do
+          event :next, :transitions_to => 'inner2'
+        end
+        state :inner2
+      end
+      state :outer2 do
+        state :inner do
+        end
+      end
+    end
+  end
+
+  class Item
+    attr_accessor :state
+    extend StateManager
+    stateful :state, ItemStates
+  end
 
   def setup
     @item = Item.new
