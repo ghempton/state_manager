@@ -21,7 +21,6 @@ module StateManager
 
     if adapter = Adapters.match(self)
       include adapter.const_get('ResourceMethods')
-      state_manager_class.send(:include, adapter.const_get('ManagerMethods'))
     end
 
     Helpers::Methods.define_methods(state_manager_class.specification, self) if helpers

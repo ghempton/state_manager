@@ -64,9 +64,10 @@ class ActiveRecordTest < Test::Unit::TestCase
 
   def test_set_state_on_initialize
     post = Post.find(1)
+    assert !post.state
+
     state = PostStates.new(post)
 
-    assert post.changed?
     assert_equal 'unsubmitted', post.state
   end
 
@@ -107,9 +108,10 @@ class ActiveRecordTest < Test::Unit::TestCase
 
   def test_invalid_initial_state_value
     post = Post.find(5)
+    assert_equal 'submitted.bad_state', post.state
+
     state = PostStates.new(post)
 
-    assert post.changed?
     assert_equal 'unsubmitted', post.state
   end
 end

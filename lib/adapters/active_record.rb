@@ -24,7 +24,7 @@ module StateManager
 
         def write_state(value)
           super(value)
-          resource.save if options[:update_on_transition]
+          resource.save
         end
 
       end

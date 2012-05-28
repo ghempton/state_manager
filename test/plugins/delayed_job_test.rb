@@ -1,0 +1,132 @@
+require 'helper'
+require 'timecop'
+
+class DelayedJobTest < Test::Unit::TestCase
+
+  class Project < ActiveRecord::Base
+  end
+
+  class ProjectStates < StateManager::Base
+    self.initial_state = 'unsubmitted.initial'
+    state :unsubmitted do
+      event :submit, :transitions_to => 'submitted'
+      state :initial do
+        event :remind, :transitions_to => 'reminded', :delay => 2.hours
+      end
+      state :reminded
+    end
+    state :submitted do
+      event :accept, :transitions_to => 'accepted'
+      event :auto_accept, :transitions_to => 'accepted', :delay => 1.day
+      event :reject, :transitions_to => 'rejected'
+    end
+    state :accepted do
+      event :remind, :transitions_to => 'rejected'
+    end
+    state :rejected
+  end
+
+  def exec(sql)
+    ActiveRecord::Base.connection.execute sql
+  end
+
+  def setup
+    ActiveRecord::Base.establish_connection(
+      :adapter => "sqlite3",
+      :database  => ":memory:" #"tmp/test"
+    )
+
+    ActiveRecord::Schema.define do
+      create_table :projects do |t|
+        t.integer :id
+        t.string :title
+        t.string :state
+      end
+
+      create_table :delayed_jobs, :force => true do |table|
+        table.integer  :priority, :default => 0      # Allows some jobs to jump to the front of the queue
+        table.integer  :attempts, :default => 0      # Provides for retries, but still fail eventually.
+        table.text     :handler                      # YAML-encoded string of the object that will do work
+        table.text     :last_error                   # reason for last failure (See Note below)
+        table.datetime :run_at                       # When to run. Could be Time.zone.now for immediately, or sometime in the future.
+        table.datetime :locked_at                    # Set when a client is working on this object
+        table.datetime :failed_at                    # Set when all retries have failed (actually, by default, the record is deleted instead)
+        table.string   :locked_by                    # Who is working on this object (if locked)
+        table.string   :queue                        # The name of the queue this job is in
+        table.timestamps
+      end
+    end
+
+    exec "INSERT INTO projects VALUES(1, 'Project 1', NULL)"
+
+  end
+
+  def teardown
+    ActiveRecord::Base.connection.disconnect!
+    Timecop.return
+  end
+
+
+  # Convince delayed job that the duration has passed and perform any jobs that
+  # need doing
+  def time_warp(duration)
+    Timecop.travel(duration.from_now)
+    Delayed::Worker.new.work_off
+  end
+
+  def test_delayed_event
+    project = Project.find(1)
+    @state = ProjectStates.new(project)
+
+    assert_state 'unsubmitted.initial'
+    assert_equal 1, Delayed::Job.count
+
+    time_warp(4.hours)
+
+    assert_equal 0, Delayed::Job.count
+    project.reload
+    assert_state 'unsubmitted.reminded'
+
+    @state.submit!
+
+    assert_state 'submitted'
+
+    time_warp(1.hour)
+
+    assert_state 'submitted', 'should not have transitioned yet'
+  end
+
+  def test_expired_event
+    project = Project.find(1)
+    @state = ProjectStates.new(project)
+
+    assert_state 'unsubmitted.initial'
+    assert_equal 1, Delayed::Job.count
+
+    @state.submit!
+
+    assert_state 'submitted'
+
+    time_warp(4.hours)
+
+    assert_state 'submitted', 'should not have transitioned'
+  end
+
+  def test_event_name_clashes
+    project = Project.find(1)
+    @state = ProjectStates.new(project)
+
+    assert_state 'unsubmitted.initial'
+    assert_equal 1, Delayed::Job.count
+
+    @state.submit!
+    @state.accept!
+
+    assert_equal 2, Delayed::Job.count
+
+    time_warp(1.month)
+
+    assert_state 'accepted', 'remind event should not have been triggered'
+  end
+
+end

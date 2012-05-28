@@ -11,9 +11,8 @@ group :development do
   gem 'pry-stack_explorer'
   gem "bundler", "~> 1.0.0"
   gem "jeweler", "~> 1.8.3"
-end
-
-group :test do
+  gem 'delayed_job_active_record'
   gem 'activerecord'
   gem 'sqlite3'
+  gem 'timecop'
 end

@@ -127,6 +127,10 @@ module StateManager
       self
     end
 
+    def to_s
+      "#{self.class.name} in '#{current_state.path}'"
+    end
+
     # Returns true if the underlying object is in the state specified by the
     # given path. An object is 'in' a state if the state lies at any point of
     # the current state's path. E.g:
@@ -179,6 +183,9 @@ module StateManager
         self.send :define_method, specification.resource_name do
           resource
         end
+
+        adapter = Adapters.match(specification.resource_class)
+        include adapter.const_get('ManagerMethods') if adapter
       end
     end
 

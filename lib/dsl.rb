@@ -8,7 +8,7 @@ module StateManager
       # If no base class is specified we look for a class inside the current
       # state's class which has the same name as the state
       const_name = name.capitalize
-      klass ||= if self.const_defined?(const_name)
+      klass ||= if const_defined?(const_name)
         self.const_get(name.capitalize)
       else
         StateManager::State
@@ -24,7 +24,8 @@ module StateManager
         end
       end
 
-      self.const_set(const_name, klass)
+      remove_const const_name if const_defined?(const_name)
+      const_set(const_name, klass)
 
       specification.states[name.to_sym] = klass
     end
@@ -33,6 +34,7 @@ module StateManager
     def event(name, options={}, &block)
       name = name.to_sym
       event = options.dup
+      event[:name] = name
       specification.events[name] = event
       define_method name, &block if block
     end
