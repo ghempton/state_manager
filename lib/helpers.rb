@@ -13,13 +13,13 @@ module StateManager
       end
 
       def self.define_methods_helper(specification, target_class, name_parts)
-        specification.events.each do |event|
-          target_class.send :define_method, "#{event.to_s}!" do | *args |
-            state_manager.send_event! event, *args
+        specification.events.each do |name, event|
+          target_class.send :define_method, "#{name.to_s}!" do | *args |
+            state_manager.send_event! name, *args
           end
 
-          target_class.send :define_method, "can_#{event.to_s}?" do
-            state_manager.respond_to_event?(event)
+          target_class.send :define_method, "can_#{name.to_s}?" do
+            state_manager.respond_to_event?(name)
           end
         end
 

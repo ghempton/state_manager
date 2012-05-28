@@ -45,8 +45,8 @@ class TransitionsTest < Test::Unit::TestCase
     end
 
     self.initial_state = :unregistered
-    event :ban, :transitions_to => 'inactive.banned' do |reason|
-      resource.notes = "Banned because: #{reason}"
+    event :ban, :transitions_to => 'inactive.banned' do |reason=nil|
+      user.notes = "Banned because: #{reason}"
     end
     state :unregistered do
       event :register do

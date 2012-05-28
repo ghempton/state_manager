@@ -3,6 +3,8 @@ require 'active_record'
 
 class ActiveRecordTest < Test::Unit::TestCase
 
+  class Post < ActiveRecord::Base; end
+
   class PostStates < StateManager::Base
     state :unsubmitted do
       event :submit, :transitions_to => 'submitted.awaiting_review'
@@ -23,7 +25,7 @@ class ActiveRecordTest < Test::Unit::TestCase
     state :rejected
   end
 
-  class Post < ::ActiveRecord::Base
+  class Post
     extend StateManager
     stateful :state
   end

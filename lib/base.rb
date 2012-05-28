@@ -14,12 +14,11 @@ module StateManager
     class_attribute :default_options
     self.default_options = {:state_property => :state}
 
-    attr_accessor :target, :options
-    alias :resource :target
+    attr_accessor :resource, :options
   
-    def initialize(target, options={})
+    def initialize(resource, options={})
       super(nil, nil)
-      self.target = target
+      self.resource = resource
       self.options = self.class.default_options.merge(options)
 
       transition_to(initial_state.path) unless current_state
@@ -84,7 +83,7 @@ module StateManager
 
     def current_state
       path = read_state
-      find_state(path) if path
+      find_state(path) if path && !path.empty?
     end
 
     def initial_state
@@ -100,24 +99,26 @@ module StateManager
       write_state(value)
     end
 
-    # Send an event to the current state. This method will walk the current
-    # state's path and find the first state which responds to the event.
-    def send_event!(event, *args)
-      self.current_event = event
-      state = find_state_for_event(event)
-      raise(InvalidEvent, event) unless state
-      state.send event, *args
+    # Send an event to the current state.
+    #
+    # Unlike the regular send_event method, this method recursively walks the
+    # path of states starting at the current state.
+    def send_event!(name, *args)
+      self.current_event = name
+      state = find_state_for_event(name)
+      raise(InvalidEvent, name) unless state
+      state.send_event name, *args
       self.current_event = nil
     end
 
-    def respond_to_event?(event)
-      !!find_state_for_event(event)
+    def respond_to_event?(name)
+      !!find_state_for_event(name)
     end
 
-    def find_state_for_event(event)
+    def find_state_for_event(name)
       state = current_state
       while(state) do
-        return state if state.respond_to?(event)
+        return state if state.has_event?(name)
         state = state.parent_state
       end
     end
@@ -141,11 +142,49 @@ module StateManager
 
     # These methods can be overriden by an adapter
     def write_state(value)
-      target.send "#{options[:state_property].to_s}=", value.path
+      resource.send "#{options[:state_property].to_s}=", value.path
     end
 
     def read_state
-      target.send options[:state_property]
+      resource.send options[:state_property]
+    end
+
+    def self.initialize_resource_class!
+      # First priority is the namespaced model, e.g. User::Group
+      specification.resource_class ||= begin
+        namespaced_class = self.name.sub(/States/, '')
+        namespaced_class.constantize
+      rescue NameError
+        nil
+      end
+
+      # Second priority is the top namespace model, e.g. EngineName::Article for EngineName::Admin::ArticlesController
+      specification.resource_class ||= begin
+        namespaced_classes = self.name.sub(/States/, '').split('::')
+        namespaced_class = [namespaced_classes.first, namespaced_classes.last].join('::')
+        namespaced_class.constantize
+      rescue NameError
+        nil
+      end
+
+      # Third priority the camelcased c, i.e. UserGroup
+      specification.resource_class ||= begin
+        camelcased_class = self.name.sub(/States/, '').gsub('::', '')
+        camelcased_class.constantize
+      rescue NameError
+        nil
+      end
+
+      if specification.resource_class
+        self.send :define_method, specification.resource_name do
+          resource
+        end
+      end
+    end
+
+    def self.inherited(base)
+      super(base)
+      base.send :initialize_resource_class!
     end
 
     protected

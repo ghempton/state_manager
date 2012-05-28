@@ -2,6 +2,8 @@ require 'helper'
 
 class HelpersTest < Test::Unit::TestCase
 
+  class Item; end
+
   class ItemStates < StateManager::Base
     state :default do
       event :do_inner, :transitions_to => 'root.outer1.inner'

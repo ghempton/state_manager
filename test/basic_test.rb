@@ -32,58 +32,64 @@ class BasicTest < Test::Unit::TestCase
 
   def setup
     @post = Post.new
-    @post_states = PostStates.new(@post)
+    @state = PostStates.new(@post)
   end
   
   def test_initial_states
-    assert_equal @post_states.current_state.path, 'unsubmitted', "initial state should be set to the first state"
+    assert_equal @state.current_state.path, 'unsubmitted', "initial state should be set to the first state"
 
     @post = Post.new
-    sm_initial = PostStatesWithInitialState.new(@post)
+    @state = PostStatesWithInitialState.new(@post)
 
-    assert_equal sm_initial.current_state.path, 'submitted.awaiting_review', "initial state should be set to specified initial state"
+    assert_equal @state.current_state.path, 'submitted.awaiting_review', "initial state should be set to specified initial state"
 
     @post = Post.new
     @post.state = 'active'
-    @post_states = PostStates.new(@post)
+    @state = PostStates.new(@post)
 
-    assert_equal @post_states.current_state.path, 'active', "initial state should be read from target" 
+    assert_equal @state.current_state.path, 'active', "initial state should be read from resource"
+
+    @post = Post.new
+    @post.state = ''
+    @state = PostStatesWithInitialState.new(@post)
+
+    assert_equal 'submitted.awaiting_review', @state.current_state.path, "initial state should be set to specified initial state"
   end
 
   def test_options
-    @post_states = PostStates.new(@post, {:user => 'brogrammer'})
-    assert_equal 'brogrammer', @post_states.options[:user]
+    @state = PostStates.new(@post, {:user => 'brogrammer'})
+    assert_equal 'brogrammer', @state.options[:user]
   end
 
   def test_state_changes
-    @post_states.transition_to 'submitted.clarifying'
+    @state.transition_to 'submitted.clarifying'
 
-    assert_equal @post_states.current_state.path, 'submitted.clarifying', 'state should have transitioned'
+    assert_equal @state.current_state.path, 'submitted.clarifying', 'state should have transitioned'
     assert_equal @post.state, 'submitted.clarifying', 'state should have been written'
 
-    @post_states.transition_to 'reviewing'
-    assert_equal @post_states.current_state.path, 'submitted.reviewing', 'state should transition with shorthand sibling name'
+    @state.transition_to 'reviewing'
+    assert_equal @state.current_state.path, 'submitted.reviewing', 'state should transition with shorthand sibling name'
 
-    @post_states.transition_to 'rejected'
-    assert_equal @post_states.current_state.path, 'rejected', 'state should have transitioned'
+    @state.transition_to 'rejected'
+    assert_equal @state.current_state.path, 'rejected', 'state should have transitioned'
   
     assert_raise StateManager::StateNotFound do
-      @post_states.transition_to 'reviewing'
+      @state.transition_to 'reviewing'
     end
   end
 
   def test_events
-    @post_states.send_event! :submit
+    @state.send_event! :submit
 
-    assert_equal @post_states.current_state.path, 'submitted.awaiting_review', 'state should have transitioned'
+    assert_equal @state.current_state.path, 'submitted.awaiting_review', 'state should have transitioned'
     assert_equal @post.state, 'submitted.awaiting_review', 'state should have been written'
 
     assert_raise StateManager::InvalidEvent do
-      @post_states.send_event! :submit
+      @state.send_event! :submit
     end
     assert_equal @post.state, 'submitted.awaiting_review', 'state should not have changed'
 
-    @post_states.send_event! :review
+    @state.send_event! :review
   end
 
 end

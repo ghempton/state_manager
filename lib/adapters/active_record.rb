@@ -7,7 +7,7 @@ module StateManager
         %w(ActiveRecord::Base)
       end
 
-      module ModelMethods
+      module ResourceMethods
 
         def self.included(base)
           base.before_validation :write_initial_state
@@ -24,7 +24,7 @@ module StateManager
 
         def write_state(value)
           super(value)
-          target.save if options[:update_on_transition]
+          resource.save if options[:update_on_transition]
         end
 
       end

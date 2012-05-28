@@ -10,7 +10,7 @@ module StateManager
 
   class AdapterNotFound < StandardError; end;
 
-  # This method is called on the target class
+  # This method is called on the resource class
   def stateful(property, state_manager_class=nil, helpers=true, options={})
 
     state_manager_class ||= "#{self.name}States".constantize
@@ -20,7 +20,7 @@ module StateManager
     end
 
     if adapter = Adapters.match(self)
-      include adapter.const_get('ModelMethods')
+      include adapter.const_get('ResourceMethods')
       state_manager_class.send(:include, adapter.const_get('ManagerMethods'))
     end
 

@@ -8,16 +8,20 @@ module StateManager
     # child states and events. During initialization, the specification will
     # be read and the child states and events will be initialized.
     class Specification
-      attr_accessor :states, :events
+      attr_accessor :states, :events, :resource_class
 
       def initialize
         self.states = {}
-        self.events = []
+        self.events = {}
       end
 
       def initialize_copy(source)
         self.states = source.states.dup
         self.events = source.events.dup
+      end
+
+      def resource_name
+        @resource_name ||= resource_class.name.demodulize.downcase.to_sym
       end
     end
 
@@ -68,14 +72,25 @@ module StateManager
       parent_state.state_manager
     end
 
-    # Get the target stored on the state manager
-    def target
-      state_manager.target
+    # Get the resource stored on the state manager
+    def resource
+      state_manager.resource
     end
-    alias :resource :target
 
     def transition_to(*args)
       state_manager.transition_to(*args)
+    end
+
+    def has_event?(name)
+      name = name.to_sym
+      !!self.class.specification.events[name]
+    end
+
+    def send_event(name, *args)
+      name = name.to_sym
+      event = self.class.specification.events[name]
+      send(name, *args) if respond_to?(name)
+      transition_to(event[:transitions_to]) if event[:transitions_to]
     end
 
     protected

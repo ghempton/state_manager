@@ -16,13 +16,6 @@ class DefinitionTest < Test::Unit::TestCase
     end
 
     class Submitted < StateManager::State
-      class Reviewing < StateManager::State
-
-        def accept(reason)
-          state_manager.accept_reason = reason
-        end
-
-      end
 
       state :awaiting_review do
         event :review, :transitions_to => 'submitted.reviewing'
@@ -33,6 +26,14 @@ class DefinitionTest < Test::Unit::TestCase
       end
       state :clarifying do
         event :review, :transitions_to => 'submitted.reviewing'
+      end
+
+      class Reviewing
+
+        def accept(reason)
+          state_manager.accept_reason = reason
+        end
+
       end
     end
 
