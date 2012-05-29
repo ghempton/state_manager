@@ -1,5 +1,3 @@
-require 'state'
-
 module StateManager
   module DSL
 

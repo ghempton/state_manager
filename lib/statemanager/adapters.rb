@@ -1,9 +1,7 @@
-require 'helpers'
-
 # Load each available adapter
-require 'adapters/base'
+require 'statemanager/adapters/base'
 Dir["#{File.dirname(__FILE__)}/adapters/*.rb"].sort.each do |path|
-  require "adapters/#{File.basename(path)}"
+  require "statemanager/adapters/#{File.basename(path)}"
 end
 
 module StateManager
@@ -11,9 +9,10 @@ module StateManager
   class AdapterNotFound < StandardError; end;
 
   # This method is called on the resource class
-  def stateful(property, state_manager_class=nil, helpers=true, options={})
+  def stateful(property=nil, state_manager_class=nil, helpers=true, options={})
 
     state_manager_class ||= "#{self.name}States".constantize
+    options = options.merge(:state_property => property) if property
 
     define_method :state_manager do
       @state_manager ||= state_manager_class.new(self, options)

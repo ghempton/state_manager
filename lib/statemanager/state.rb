@@ -1,4 +1,3 @@
-require 'dsl'
 require 'active_support/core_ext'
 
 module StateManager
@@ -21,7 +20,7 @@ module StateManager
       end
 
       def resource_name
-        @resource_name ||= resource_class.name.demodulize.downcase.to_sym
+        @resource_name ||= resource_class.name.demodulize.underscore.to_sym
       end
     end
 

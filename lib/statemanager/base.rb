@@ -1,6 +1,3 @@
-require 'dsl'
-require 'state'
-
 module StateManager
  
   class StateNotFound < StandardError; end;
