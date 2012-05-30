@@ -2,10 +2,6 @@ require 'helper'
 
 class DefinitionTest < Test::Unit::TestCase
 
-  class Comment
-    attr_accessor :state
-  end
-
   class CommentStates < StateManager::Base
     attr_accessor :accept_reason, :reject_reason
 
@@ -57,27 +53,40 @@ class DefinitionTest < Test::Unit::TestCase
 
   end
 
+  class Comment
+    attr_accessor :state
+    extend StateManager::Resource
+    state_manager
+  end
+
   def setup
-    @comment = Comment.new
-    @state = CommentStates.new(@comment)
+    @resource = Comment.new
   end
 
   def test_event_in_separate_class_definition
-    @state.submit!
-    assert @state.in_state?('submitted.awaiting_review')
+    @resource.submit!
+    assert_state 'submitted.awaiting_review'
   end
 
   def test_states_in_separate_class_definition
-    @state.submit!
-    assert @state.in_state?('submitted.awaiting_review')
-    @state.review!
-    assert @state.in_state?('submitted.reviewing')
-    @state.accept!('hipster')
-    assert_equal 'hipster', @state.accept_reason 
-    assert @state.in_state?('active')
-    @state.reject!('not a hipster')
-    assert_equal 'not a hipster', @state.reject_reason
-    assert @state.in_state?('rejected')
+    @resource.submit!
+
+    assert_state 'submitted.awaiting_review'
+
+    @resource.review!
+
+    assert_state 'submitted.reviewing'
+
+    @resource.accept!('hipster')
+
+    assert_equal 'hipster', @resource.state_manager.accept_reason
+    assert_state 'active'
+
+    @resource.reject!('not a hipster')
+
+    assert_equal 'not a hipster', @resource.state_manager.reject_reason
+
+    assert_state 'rejected'
   end
 
 end

@@ -4,12 +4,12 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = "statemanager"
+  s.name = "state_manager"
   s.version = "0.1.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Gordon Hempton"]
-  s.date = "2012-05-24"
+  s.date = "2012-05-29"
   s.description = "Finite state machine implementation that keeps logic separate from model classes and supports sub-states."
   s.email = "ghempton@gmail.com"
   s.extra_rdoc_files = [
@@ -24,15 +24,13 @@ Gem::Specification.new do |s|
     "README.md",
     "Rakefile",
     "VERSION",
-    "lib/base.rb",
-    "lib/dsl.rb",
-    "lib/helpers.rb",
-    "lib/state.rb",
-    "lib/statemanager.rb",
     "statemanager.gemspec",
+    "test/adapters/active_record_test.rb",
     "test/basic_test.rb",
+    "test/definition_test.rb",
     "test/helper.rb",
     "test/helpers_test.rb",
+    "test/plugins/delayed_job_test.rb",
     "test/transitions_test.rb"
   ]
   s.homepage = "http://github.com/ghempton/statemanager"
@@ -54,6 +52,10 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<pry-stack_explorer>, [">= 0"])
       s.add_development_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_development_dependency(%q<jeweler>, ["~> 1.8.3"])
+      s.add_development_dependency(%q<delayed_job_active_record>, [">= 0"])
+      s.add_development_dependency(%q<activerecord>, [">= 0"])
+      s.add_development_dependency(%q<sqlite3>, [">= 0"])
+      s.add_development_dependency(%q<timecop>, [">= 0"])
     else
       s.add_dependency(%q<activesupport>, [">= 0"])
       s.add_dependency(%q<rdoc>, ["~> 3.12"])
@@ -64,6 +66,10 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<pry-stack_explorer>, [">= 0"])
       s.add_dependency(%q<bundler>, ["~> 1.0.0"])
       s.add_dependency(%q<jeweler>, ["~> 1.8.3"])
+      s.add_dependency(%q<delayed_job_active_record>, [">= 0"])
+      s.add_dependency(%q<activerecord>, [">= 0"])
+      s.add_dependency(%q<sqlite3>, [">= 0"])
+      s.add_dependency(%q<timecop>, [">= 0"])
     end
   else
     s.add_dependency(%q<activesupport>, [">= 0"])
@@ -75,6 +81,10 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<pry-stack_explorer>, [">= 0"])
     s.add_dependency(%q<bundler>, ["~> 1.0.0"])
     s.add_dependency(%q<jeweler>, ["~> 1.8.3"])
+    s.add_dependency(%q<delayed_job_active_record>, [">= 0"])
+    s.add_dependency(%q<activerecord>, [">= 0"])
+    s.add_dependency(%q<sqlite3>, [">= 0"])
+    s.add_dependency(%q<timecop>, [">= 0"])
   end
 end
 

@@ -2,10 +2,6 @@ require 'helper'
 
 class BasicTest < Test::Unit::TestCase
 
-  class Post
-    attr_accessor :state
-  end
-
   class PostStates < StateManager::Base
     state :unsubmitted do
       event :submit, :transitions_to => 'submitted.awaiting_review'
@@ -26,70 +22,82 @@ class BasicTest < Test::Unit::TestCase
     state :rejected
   end
 
-  class PostStatesWithInitialState < PostStates
-    self.initial_state = 'submitted.awaiting_review'
+  class Post
+    attr_accessor :state
+    extend StateManager::Resource
+    state_manager :state
+  end
+
+  class PostWithInitialState
+    attr_accessor :state
+    extend StateManager::Resource
+    state_manager :state, PostStates do
+      initial_state 'submitted.awaiting_review'
+    end
   end
 
   def setup
-    @post = Post.new
-    @state = PostStates.new(@post)
+    @resource = Post.new
+  end
+
+  def test_state_manager_class_initialized
+    assert @resource.state_manager.is_a?(PostStates), "state manager should have been initialized"
   end
   
   def test_initial_states
-    assert_equal @state.current_state.path, 'unsubmitted', "initial state should be set to the first state"
+    assert_state 'unsubmitted', "initial state should be set to the default"
 
-    @post = Post.new
-    @state = PostStatesWithInitialState.new(@post)
+    @resource = PostWithInitialState.new
 
-    assert_equal @state.current_state.path, 'submitted.awaiting_review', "initial state should be set to specified initial state"
+    assert_state 'submitted.awaiting_review', "initial state should be set to specified initial state"
 
-    @post = Post.new
-    @post.state = 'active'
-    @state = PostStates.new(@post)
+    @resource = Post.new
+    @resource.state = 'active'
 
-    assert_equal @state.current_state.path, 'active', "initial state should be read from resource"
+    assert_state 'active', "initial state should be read from resource"
 
-    @post = Post.new
-    @post.state = ''
-    @state = PostStatesWithInitialState.new(@post)
+    @resource = PostWithInitialState.new
+    @resource.state = ''
 
-    assert_equal 'submitted.awaiting_review', @state.current_state.path, "initial state should be set to specified initial state"
+    assert_state 'submitted.awaiting_review', "initial state should be set to specified initial state"
   end
 
-  def test_options
-    @state = PostStates.new(@post, {:user => 'brogrammer'})
-    assert_equal 'brogrammer', @state.options[:user]
+  def test_context
+    @resource.state_manager.context[:user] = 'brogrammer'
+    assert_equal 'brogrammer', @resource.state_manager.context[:user]
   end
 
   def test_state_changes
-    @state.transition_to 'submitted.clarifying'
+    @resource.state_manager.transition_to 'submitted.clarifying'
 
-    assert_equal @state.current_state.path, 'submitted.clarifying', 'state should have transitioned'
-    assert_equal @post.state, 'submitted.clarifying', 'state should have been written'
+    assert_state 'submitted.clarifying', 'state should have transitioned'
+    assert_equal @resource.state, 'submitted.clarifying', 'state should have been written'
 
-    @state.transition_to 'reviewing'
-    assert_equal @state.current_state.path, 'submitted.reviewing', 'state should transition with shorthand sibling name'
+    @resource.state_manager.transition_to 'reviewing'
 
-    @state.transition_to 'rejected'
-    assert_equal @state.current_state.path, 'rejected', 'state should have transitioned'
+    assert_state 'submitted.reviewing', 'state should transition with shorthand sibling name'
+
+    @resource.state_manager.transition_to 'rejected'
+
+    assert_state 'rejected', 'state should have transitioned'
   
     assert_raise StateManager::StateNotFound do
-      @state.transition_to 'reviewing'
+      @resource.state_manager.transition_to 'reviewing'
     end
   end
 
   def test_events
-    @state.send_event! :submit
+    @resource.state_manager.send_event! :submit
 
-    assert_equal @state.current_state.path, 'submitted.awaiting_review', 'state should have transitioned'
-    assert_equal @post.state, 'submitted.awaiting_review', 'state should have been written'
+    assert_equal @resource.state_manager.current_state.path, 'submitted.awaiting_review', 'state should have transitioned'
+    assert_equal @resource.state, 'submitted.awaiting_review', 'state should have been written'
 
     assert_raise StateManager::InvalidEvent do
-      @state.send_event! :submit
+      @resource.state_manager.send_event! :submit
     end
-    assert_equal @post.state, 'submitted.awaiting_review', 'state should not have changed'
+    assert_equal @resource.state, 'submitted.awaiting_review', 'state should not have changed'
 
-    @state.send_event! :review
+    @resource.state_manager.send_event! :review
   end
 
 end

@@ -1,6 +1,0 @@
-require 'statemanager/state'
-require 'statemanager/base'
-require 'statemanager/helpers'
-require 'statemanager/dsl'
-require 'statemanager/adapters'
-require 'statemanager/plugins'

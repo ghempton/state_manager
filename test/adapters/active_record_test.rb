@@ -1,9 +1,6 @@
 require 'helper'
-require 'active_record'
 
 class ActiveRecordTest < Test::Unit::TestCase
-
-  class Post < ActiveRecord::Base; end
 
   class PostStates < StateManager::Base
     state :unsubmitted do
@@ -25,9 +22,9 @@ class ActiveRecordTest < Test::Unit::TestCase
     state :rejected
   end
 
-  class Post
-    extend StateManager
-    stateful :state
+  class Post < ActiveRecord::Base
+    extend StateManager::Resource
+    state_manager
   end
 
   def exec(sql)
@@ -46,72 +43,49 @@ class ActiveRecordTest < Test::Unit::TestCase
         t.string :title
         t.string :body
         t.string :state
-        t.string :workflow_state
       end
     end
 
-    exec "INSERT INTO posts VALUES(1, NULL, NULL, NULL, NULL)"
-    exec "INSERT INTO posts VALUES(2, NULL, NULL, 'unsubmitted', NULL)"
-    exec "INSERT INTO posts VALUES(3, NULL, NULL, NULL, 'unsubmitted')"
-    exec "INSERT INTO posts VALUES(4, NULL, NULL, 'submitted.reviewing', NULL)"
-    exec "INSERT INTO posts VALUES(5, NULL, NULL, 'submitted.bad_state', NULL)"
+    exec "INSERT INTO posts VALUES(1, NULL, NULL, NULL)"
+    exec "INSERT INTO posts VALUES(2, NULL, NULL, 'unsubmitted')"
+    exec "INSERT INTO posts VALUES(3, NULL, NULL, 'submitted.reviewing')"
+    exec "INSERT INTO posts VALUES(4, NULL, NULL, 'submitted.bad_state')"
 
+    @resource = nil
   end
 
   def teardown
     ActiveRecord::Base.connection.disconnect!
   end
 
-  def test_set_state_on_initialize
-    post = Post.find(1)
-    assert !post.state
-
-    state = PostStates.new(post)
-
-    assert_equal 'unsubmitted', post.state
+  def test_adapter_included
+    @resource = Post.find(1)
+    assert @resource.is_a?(StateManager::Adapters::ActiveRecord::ResourceMethods)
+    assert @resource.state_manager.is_a?(StateManager::Adapters::ActiveRecord::ManagerMethods)
   end
 
   def test_persist_initial_state
-    post = Post.find(1)
-    assert !post.state
-    post.save
-    assert_equal 'unsubmitted', post.state
-
-    post = Post.find(5)
-    assert_equal 'submitted.bad_state', post.state
-    post.save
-    assert_equal 'unsubmitted', post.state
-  end
-
-  def test_update_on_transition
-    post = Post.find(3)
-    state = PostStates.new(post, :update_on_transition => true)
-
-    state.submit!
-
-    assert !post.changed?
-  end
-
-  def test_alternate_state_attribute
-    post = Post.find(3)
-    state = PostStates.new(post, :state_property => :workflow_state)
-
-    assert_equal 'unsubmitted', state.current_state.path
+    @resource = Post.find(1)
+    assert_state 'unsubmitted'
+    assert !@resource.changed?, "state should have been persisted"
   end
 
   def test_initial_state_value
-    post = Post.find(4)
-    state = PostStates.new(post)
-
-    assert_equal 'submitted.reviewing', state.current_state.path
+    @resource = Post.find(3)
+    assert_state 'submitted.reviewing'
   end
 
-  def test_invalid_initial_state_value
-    post = Post.find(5)
-    assert_equal 'submitted.bad_state', post.state
+  def test_validate_nil_state
+    @resource = Post.find(1)
+    assert !@resource.state
+    @resource.save
+    assert_state 'unsubmitted'
+  end
 
-    state = PostStates.new(post)
-
-    assert_equal 'unsubmitted', post.state
+  def test_validate_invalid_state
+    @resource = Post.find(4)
+    assert_equal 'submitted.bad_state', @resource.state
+    @resource.save
+    assert_state 'unsubmitted'
   end
 end

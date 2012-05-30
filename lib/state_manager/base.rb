@@ -7,16 +7,12 @@ module StateManager
   # of an object as well as managing the transitions between states.
   class Base < State
 
-    class_attribute :initial_state
-    class_attribute :default_options
-    self.default_options = {:state_property => :state}
+    attr_accessor :resource, :context
 
-    attr_accessor :resource, :options
-  
-    def initialize(resource, options={})
+    def initialize(resource, context={})
       super(nil, nil)
       self.resource = resource
-      self.options = self.class.default_options.merge(options)
+      self.context = context
 
       transition_to(initial_state.path) unless current_state
     end
@@ -84,8 +80,8 @@ module StateManager
     end
 
     def initial_state
-      if self.class.initial_state
-        find_state(self.class.initial_state.to_s)
+      if state = self.class.specification.initial_state
+        find_state(state.to_s)
       else
         # TODO: ensure this is a leaf state
         states.first[1]
@@ -125,7 +121,7 @@ module StateManager
     end
 
     def to_s
-      "#{self.class.name} in '#{current_state.path}'"
+      "#{current_state.path}"
     end
 
     # Returns true if the underlying object is in the state specified by the
@@ -143,52 +139,22 @@ module StateManager
 
     # These methods can be overriden by an adapter
     def write_state(value)
-      resource.send "#{options[:state_property].to_s}=", value.path
+      resource.send "#{specification.state_property.to_s}=", value.path
     end
 
     def read_state
-      resource.send options[:state_property]
-    end
-
-    def self.initialize_resource_class!
-      # First priority is the namespaced model, e.g. User::Group
-      specification.resource_class ||= begin
-        namespaced_class = self.name.sub(/States/, '')
-        namespaced_class.constantize
-      rescue NameError
-        nil
-      end
-
-      # Second priority is the top namespace model, e.g. EngineName::Article for EngineName::Admin::ArticlesController
-      specification.resource_class ||= begin
-        namespaced_classes = self.name.sub(/States/, '').split('::')
-        namespaced_class = [namespaced_classes.first, namespaced_classes.last].join('::')
-        namespaced_class.constantize
-      rescue NameError
-        nil
-      end
-
-      # Third priority the camelcased c, i.e. UserGroup
-      specification.resource_class ||= begin
-        camelcased_class = self.name.sub(/States/, '').gsub('::', '')
-        camelcased_class.constantize
-      rescue NameError
-        nil
-      end
-
-      if specification.resource_class
-        self.send :define_method, specification.resource_name do
-          resource
-        end
-
-        adapter = Adapters.match(specification.resource_class)
-        include adapter.const_get('ManagerMethods') if adapter
-      end
+      resource.send specification.state_property
     end
 
     def self.inherited(base)
       super(base)
-      base.send :initialize_resource_class!
+      # Infer the resource name from the class name
+      if base.name =~ /States/
+        base.specification.resource_name = base.name.demodulize.gsub(/States/, '').underscore
+        base.send :define_method, base.specification.resource_name do
+          resource
+        end
+      end
     end
 
     protected

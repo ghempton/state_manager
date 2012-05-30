@@ -1,0 +1,1 @@
+require 'state_manager/core'

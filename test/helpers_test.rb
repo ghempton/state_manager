@@ -2,8 +2,6 @@ require 'helper'
 
 class HelpersTest < Test::Unit::TestCase
 
-  class Item; end
-
   class ItemStates < StateManager::Base
     state :default do
       event :do_inner, :transitions_to => 'root.outer1.inner'
@@ -25,48 +23,39 @@ class HelpersTest < Test::Unit::TestCase
 
   class Item
     attr_accessor :state
-    extend StateManager
-    stateful :state, ItemStates
+    extend StateManager::Resource
+    state_manager
   end
 
   def setup
-    @item = Item.new
-    @item_states = ItemStates.new(@item)
+    @resource = Item.new
   end
 
-  def helpers_test(target)
-    assert target.default?
-    assert !target.root?
-    assert !target.root_outer1?
-    assert !target.root_outer1_inner?
-    assert target.can_do_inner?
-    assert !target.can_next?
+  def test_helpers
+    assert @resource.default?
+    assert !@resource.root?
+    assert !@resource.root_outer1?
+    assert !@resource.root_outer1_inner?
+    assert @resource.can_do_inner?
+    assert !@resource.can_next?
 
-    target.do_inner!
+    @resource.do_inner!
 
-    assert target.root?
-    assert target.root_outer1?
-    assert target.root_outer1_inner?
-    assert !target.root_outer2_inner?
-    assert target.can_next?
+    assert @resource.root?
+    assert @resource.root_outer1?
+    assert @resource.root_outer1_inner?
+    assert !@resource.root_outer2_inner?
+    assert @resource.can_next?
     
-    target.next!
+    @resource.next!
 
-    assert target.root_outer1_inner2?
-    assert target.can_next?
+    assert @resource.root_outer1_inner2?
+    assert @resource.can_next?
 
-    target.next!
+    @resource.next!
 
-    assert target.root_outer2_inner?
-    assert !target.can_next?
-  end
-  
-  def test_base_helpers
-    helpers_test(@item_states)
-  end
-
-  def test_object_helpers
-    helpers_test(@item)
+    assert @resource.root_outer2_inner?
+    assert !@resource.can_next?
   end
 
 end

@@ -3,11 +3,8 @@ require 'timecop'
 
 class DelayedJobTest < Test::Unit::TestCase
 
-  class Project < ActiveRecord::Base
-  end
-
   class ProjectStates < StateManager::Base
-    self.initial_state = 'unsubmitted.initial'
+    initial_state 'unsubmitted.initial'
     state :unsubmitted do
       event :submit, :transitions_to => 'submitted'
       state :initial do
@@ -61,6 +58,11 @@ class DelayedJobTest < Test::Unit::TestCase
 
   end
 
+  class Project < ActiveRecord::Base
+    extend StateManager::Resource
+    state_manager
+  end
+
   def teardown
     ActiveRecord::Base.connection.disconnect!
     Timecop.return
@@ -75,19 +77,18 @@ class DelayedJobTest < Test::Unit::TestCase
   end
 
   def test_delayed_event
-    project = Project.find(1)
-    @state = ProjectStates.new(project)
-
+    @resource = Project.find(1)
+    
     assert_state 'unsubmitted.initial'
     assert_equal 1, Delayed::Job.count
 
     time_warp(4.hours)
 
     assert_equal 0, Delayed::Job.count
-    project.reload
+    @resource.reload
     assert_state 'unsubmitted.reminded'
 
-    @state.submit!
+    @resource.submit!
 
     assert_state 'submitted'
 
@@ -97,13 +98,12 @@ class DelayedJobTest < Test::Unit::TestCase
   end
 
   def test_expired_event
-    project = Project.find(1)
-    @state = ProjectStates.new(project)
+    @resource = Project.find(1)
 
     assert_state 'unsubmitted.initial'
     assert_equal 1, Delayed::Job.count
 
-    @state.submit!
+    @resource.submit!
 
     assert_state 'submitted'
 
@@ -113,14 +113,13 @@ class DelayedJobTest < Test::Unit::TestCase
   end
 
   def test_event_name_clashes
-    project = Project.find(1)
-    @state = ProjectStates.new(project)
+    @resource = Project.find(1)
 
     assert_state 'unsubmitted.initial'
     assert_equal 1, Delayed::Job.count
 
-    @state.submit!
-    @state.accept!
+    @resource.submit!
+    @resource.accept!
 
     assert_equal 2, Delayed::Job.count
 

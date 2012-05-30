@@ -2,10 +2,6 @@ require 'helper'
 
 class TransitionsTest < Test::Unit::TestCase
 
-  class User
-    attr_accessor :state, :notes, :paid, :has_prizes
-  end
-
   class UserStates < StateManager::Base
     module TrackEnterExitCounts
       attr_reader :enter_count
@@ -44,7 +40,7 @@ class TransitionsTest < Test::Unit::TestCase
       exit_counts[state] = exit_counts[state] + 1
     end
 
-    self.initial_state = :unregistered
+    initial_state :unregistered
     event :ban, :transitions_to => 'inactive.banned' do |reason=nil|
       user.notes = "Banned because: #{reason}"
     end
@@ -101,70 +97,78 @@ class TransitionsTest < Test::Unit::TestCase
 
   end
 
+  class User
+    attr_accessor :state, :notes, :paid, :has_prizes
+    extend StateManager::Resource
+    state_manager
+  end
+
   def setup
-    @user = User.new
-    @state = UserStates.new(@user)
+    @resource = User.new
   end
 
   def test_custom_transition
-    @user.paid = true
-    @state.register!
-    assert @state.active_premium?
-    @state.transition_to 'unregistered'
-    @user.paid = false
-    @state.register!
-    assert @state.active_default?
+    @resource.paid = true
+    @resource.register!
+
+    assert @resource.active_premium?
+
+    @resource.state_manager.transition_to 'unregistered'
+    @resource.paid = false
+    @resource.register!
+
+    assert @resource.active_default?
   end
 
   def test_enter_exit
-    @state.transition_to('inactive.banned')
+    @resource.state_manager.transition_to('inactive.banned')
 
-    assert_equal 1, @state.find_state('inactive').enter_count
-    assert_equal 0, @state.find_state('inactive').exit_count
-    assert_equal 1, @state.find_state('inactive.banned').enter_count
-    assert_equal 0, @state.find_state('inactive.banned').exit_count
+    assert_equal 1, @resource.state_manager.find_state('inactive').enter_count
+    assert_equal 0, @resource.state_manager.find_state('inactive').exit_count
+    assert_equal 1, @resource.state_manager.find_state('inactive.banned').enter_count
+    assert_equal 0, @resource.state_manager.find_state('inactive.banned').exit_count
 
-    @state.transition_to(:unregistered)
+    @resource.state_manager.transition_to(:unregistered)
 
-    assert_equal 1, @state.find_state('inactive').enter_count
-    assert_equal 1, @state.find_state('inactive').exit_count
-    assert_equal 1, @state.find_state('inactive.banned').enter_count
-    assert_equal 1, @state.find_state('inactive.banned').exit_count
+    assert_equal 1, @resource.state_manager.find_state('inactive').enter_count
+    assert_equal 1, @resource.state_manager.find_state('inactive').exit_count
+    assert_equal 1, @resource.state_manager.find_state('inactive.banned').enter_count
+    assert_equal 1, @resource.state_manager.find_state('inactive.banned').exit_count
 
-    @state.transition_to('inactive.banned')
+    @resource.state_manager.transition_to('inactive.banned')
 
-    assert_equal 2, @state.find_state('inactive').enter_count
-    assert_equal 1, @state.find_state('inactive').exit_count
-    assert_equal 2, @state.find_state('inactive.banned').enter_count
-    assert_equal 1, @state.find_state('inactive.banned').exit_count
+    assert_equal 2, @resource.state_manager.find_state('inactive').enter_count
+    assert_equal 1, @resource.state_manager.find_state('inactive').exit_count
+    assert_equal 2, @resource.state_manager.find_state('inactive.banned').enter_count
+    assert_equal 1, @resource.state_manager.find_state('inactive.banned').exit_count
 
-    @state.transition_to('inactive.appealing')
+    @resource.state_manager.transition_to('inactive.appealing')
 
-    assert_equal 2, @state.find_state('inactive').enter_count
-    assert_equal 1, @state.find_state('inactive').exit_count
-    assert_equal 2, @state.find_state('inactive.banned').enter_count
-    assert_equal 2, @state.find_state('inactive.banned').exit_count
-    assert_equal 1, @state.find_state('inactive.appealing').enter_count
-    assert_equal 0, @state.find_state('inactive.appealing').exit_count
+    assert_equal 2, @resource.state_manager.find_state('inactive').enter_count
+    assert_equal 1, @resource.state_manager.find_state('inactive').exit_count
+    assert_equal 2, @resource.state_manager.find_state('inactive.banned').enter_count
+    assert_equal 2, @resource.state_manager.find_state('inactive.banned').exit_count
+    assert_equal 1, @resource.state_manager.find_state('inactive.appealing').enter_count
+    assert_equal 0, @resource.state_manager.find_state('inactive.appealing').exit_count
   end
 
   def test_event_with_args
-    @state.ban!('brogrammer')
-    assert_equal 'Banned because: brogrammer', @user.notes
+    @resource.ban!('brogrammer')
+    assert_equal 'Banned because: brogrammer', @resource.notes
   end
 
   def test_will_and_did_transition
-    @state.ban!
+    @resource.ban!
 
-    assert_equal 'unregistered', @state.will_current_state.to_s
-    assert_equal 'unregistered', @state.will_from.to_s
-    assert_equal 'inactive.banned', @state.will_to.to_s
-    assert_equal :ban, @state.will_event
+    assert_equal 'unregistered', @resource.state_manager.will_current_state.to_s
+    assert_equal 'unregistered', @resource.state_manager.will_from.to_s
+    assert_equal 'inactive.banned', @resource.state_manager.will_to.to_s
+    assert_equal :ban, @resource.state_manager.will_event
 
-    assert_equal 'inactive.banned', @state.did_current_state.to_s
-    assert_equal 'unregistered', @state.did_from.to_s
-    assert_equal 'inactive.banned', @state.did_to.to_s
-    assert_equal :ban, @state.did_event
+    assert_equal 'inactive.banned', @resource.state_manager.did_current_state.to_s
+    assert_equal 'unregistered', @resource.state_manager.did_from.to_s
+    assert_equal 'inactive.banned', @resource.state_manager.did_to.to_s
+    assert_equal :ban, @resource.state_manager.did_event
   end
 
 end

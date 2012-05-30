@@ -1,0 +1,7 @@
+require 'state_manager/state'
+require 'state_manager/base'
+require 'state_manager/helpers'
+require 'state_manager/dsl'
+require 'state_manager/resource'
+require 'state_manager/adapters'
+require 'state_manager/plugins'

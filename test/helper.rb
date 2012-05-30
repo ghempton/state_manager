@@ -13,7 +13,7 @@ $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'pry'
 require 'delayed_job_active_record'
-require 'statemanager'
+require 'state_manager'
 
 class Test::Unit::TestCase
 
@@ -22,7 +22,7 @@ class Test::Unit::TestCase
       message = state_manager
       state_manager = nil
     end
-    state_manager ||= @state
+    state_manager ||= @resource.state_manager
     assert_equal path, state_manager.current_state.path
   end
 
