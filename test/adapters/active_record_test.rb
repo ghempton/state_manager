@@ -88,4 +88,28 @@ class ActiveRecordTest < Test::Unit::TestCase
     @resource.save
     assert_state 'unsubmitted'
   end
+
+  def test_scopes
+    exec "INSERT INTO posts VALUES(5, NULL, NULL, 'submitted.reviewing')"
+    exec "INSERT INTO posts VALUES(6, NULL, NULL, 'submitted.reviewing')"
+    exec "INSERT INTO posts VALUES(7, NULL, NULL, 'submitted.reviewing')"
+    exec "INSERT INTO posts VALUES(8, NULL, NULL, 'submitted.reviewing')"
+    exec "INSERT INTO posts VALUES(9, NULL, NULL, 'submitted.clarifying')"
+    exec "INSERT INTO posts VALUES(10, NULL, NULL, 'submitted.clarifying')"
+
+    exec "INSERT INTO posts VALUES(11, NULL, NULL, 'active')"
+    exec "INSERT INTO posts VALUES(12, NULL, NULL, 'active')"
+    exec "INSERT INTO posts VALUES(13, NULL, NULL, 'active')"
+    exec "INSERT INTO posts VALUES(14, NULL, NULL, 'active')"
+
+    old_logger = ActiveRecord::Base.logger
+    ActiveRecord::Base.logger = Logger.new(STDOUT)
+    # +1 from setup
+    assert_equal 1, Post.unsubmitted.count
+    # +2 from setup
+    assert_equal 8, Post.submitted.count
+    assert_equal 4, Post.active.count
+    assert_equal 0, Post.rejected.count
+    ActiveRecord::Base.logger = old_logger
+  end
 end

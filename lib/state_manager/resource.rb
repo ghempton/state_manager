@@ -10,7 +10,10 @@ module StateManager
       end
     end
 
-    def state_manager(property=:state, klass=nil, helpers=true, &block)
+    def state_manager(property=:state, klass=nil, options={}, &block)
+      default_options = {:helpers => true}
+      options = default_options.merge(options)
+
       klass ||= begin
         "#{self.name}States".constantize
       rescue NameError
@@ -31,6 +34,7 @@ module StateManager
       end
 
       include adapter.const_get('ResourceMethods') if adapter
+      state_manager_added(property, klass, options) if respond_to? :state_manager_added
 
       # Define the subclass as a constant. We do this for multiple reasons, one
       # of which is to allow it to be serialized to YAML for delayed_job
@@ -51,7 +55,7 @@ module StateManager
         state_manager
       end
 
-      Helpers::Methods.define_methods(klass.specification, self, property) if helpers
+      Helpers::Methods.define_methods(klass.specification, self, property) if options[:helpers]
     end
 
   end
