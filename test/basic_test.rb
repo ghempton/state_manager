@@ -36,6 +36,12 @@ class BasicTest < Test::Unit::TestCase
     end
   end
 
+  class PostWithCustomProperty
+    attr_accessor :workflow_state
+    extend StateManager::Resource
+    state_manager :workflow_state, PostStates
+  end
+
   def setup
     @resource = Post.new
   end
@@ -98,6 +104,23 @@ class BasicTest < Test::Unit::TestCase
     assert_equal @resource.state, 'submitted.awaiting_review', 'state should not have changed'
 
     @resource.state_manager.send_event! :review
+  end
+
+  def test_alternate_property
+    @resource = PostWithCustomProperty.new
+    assert_state 'unsubmitted', @resource.workflow_state_manager
+
+    @resource.workflow_state_manager.send_event! :submit
+
+    assert_equal @resource.workflow_state_manager.current_state.path, 'submitted.awaiting_review', 'state should have transitioned'
+    assert_equal @resource.workflow_state, 'submitted.awaiting_review', 'state should have been written'
+
+    assert_raise StateManager::InvalidEvent do
+      @resource.workflow_state_manager.send_event! :submit
+    end
+    assert_equal @resource.workflow_state, 'submitted.awaiting_review', 'state should not have changed'
+
+    @resource.workflow_state_manager.send_event! :review
   end
 
 end

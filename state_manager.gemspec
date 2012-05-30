@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Gordon Hempton"]
-  s.date = "2012-05-29"
+  s.date = "2012-05-30"
   s.description = "Finite state machine implementation that keeps logic separate from model classes and supports sub-states."
   s.email = "ghempton@gmail.com"
   s.extra_rdoc_files = [
@@ -24,7 +24,19 @@ Gem::Specification.new do |s|
     "README.md",
     "Rakefile",
     "VERSION",
-    "statemanager.gemspec",
+    "lib/state_manager.rb",
+    "lib/state_manager/adapters.rb",
+    "lib/state_manager/adapters/active_record.rb",
+    "lib/state_manager/adapters/base.rb",
+    "lib/state_manager/base.rb",
+    "lib/state_manager/core.rb",
+    "lib/state_manager/dsl.rb",
+    "lib/state_manager/helpers.rb",
+    "lib/state_manager/plugins.rb",
+    "lib/state_manager/plugins/delayed_job.rb",
+    "lib/state_manager/resource.rb",
+    "lib/state_manager/state.rb",
+    "state_manager.gemspec",
     "test/adapters/active_record_test.rb",
     "test/basic_test.rb",
     "test/definition_test.rb",
