@@ -22,11 +22,13 @@ module StateManager
         nil
       end
       klass ||= StateManager::Base
-      this = self
 
+      # Create a subclass of the specified state manager and mixin an adapter
+      # if a matching one is found
+      this = self
       adapter = Adapters.match(self)
       resource_name = self.name.demodulize.underscore
-
+      
       klass = Class.new(klass) do
         state_property property
         resource_class this
@@ -34,9 +36,11 @@ module StateManager
         include adapter.const_get('ManagerMethods') if adapter
         class_eval &block if block
       end
-
       include adapter.const_get('ResourceMethods') if adapter
+
+      # Callbacks
       state_manager_added(property, klass, options) if respond_to? :state_manager_added
+      klass.added_to_resource(self, property, options)
 
       # Define the subclass as a constant. We do this for multiple reasons, one
       # of which is to allow it to be serialized to YAML for delayed_job
@@ -44,8 +48,8 @@ module StateManager
       remove_const const_name if const_defined?(const_name)
       const_set(const_name, klass)
 
+      # Create an accessor for the state manager on this resource
       state_managers[property] = klass
-
       property_name = "#{property.to_s}_manager"
       define_method property_name do
         self.state_managers ||= {}
@@ -57,6 +61,7 @@ module StateManager
         state_manager
       end
 
+      # Define the helper methods on the resource
       Helpers::Methods.define_methods(klass.specification, self, property) if options[:helpers]
     end
 

@@ -28,7 +28,7 @@ module StateManager
                 # reached so we wrap in a lamda.
                 scope state, lambda {
                   conn = ::ActiveRecord::Base.connection
-                  column = conn.quote_column_name klass.specification.state_property
+                  column = conn.quote_column_name klass._state_property
                   query = "#{column} = ? OR #{column} LIKE ?"
                   like_term = "#{state.to_s}.%"
                   where(query, state, like_term)
@@ -43,7 +43,7 @@ module StateManager
       module ManagerMethods
 
         def write_state(value)
-          resource.send :update_attribute, specification.state_property, value.path
+          resource.send :update_attribute, self.class._state_property, value.path
         end
 
       end

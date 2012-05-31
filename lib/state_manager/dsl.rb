@@ -11,19 +11,9 @@ module StateManager
       klass ||= if const_defined?(const_name)
         self.const_get(name.capitalize)
       else
-        StateManager::State
+        Class.new(StateManager::State)
       end
       klass = Class.new(klass, &block) if block
-
-      # Define a helper method that aliases to resource. This method is based on
-      # the name of the resource class
-      klass.specification.resource_class = specification.resource_class
-      klass.specification.resource_name = specification.resource_name
-      if specification.resource_name
-        klass.send :define_method, specification.resource_name do
-          resource
-        end
-      end
 
       remove_const const_name if const_defined?(const_name)
       const_set(const_name, klass)
@@ -43,33 +33,32 @@ module StateManager
     # Helper to simplify creating dsl reader methods for specification
     # properties
     module_eval do
-      def self.spec_property(name, &block)
+      def self.spec_property(name)
         class_eval do
           define_method name do |value|
             specification.send "#{name}=", value
           end
         end
-        class_exec(name, &block) if block
       end
     end
 
     # The initial state
-    spec_property :initial_state
-
-    # The Model class for this state manager
-    spec_property :resource_class
-
-    # An alias for 'resource' that is accessible in all states
-    spec_property :resource_name do |value|
-      unless method_defined?(value)
-        define_method value do
-          resource
-        end
-      end
+    def initial_state(value)
+      specification.initial_state = value
     end
 
-    # The property on the resource to read/write state to
-    spec_property :state_property
+    def resource_class(value)
+      self._resource_class = value
+    end
+
+    def resource_name(value)
+      self._resource_name = value
+      create_resource_accessor!(_resource_name)
+    end
+
+    def state_property(value)
+      self._state_property = value
+    end
   end
 
   class State

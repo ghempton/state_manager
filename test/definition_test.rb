@@ -51,9 +51,37 @@ class DefinitionTest < Test::Unit::TestCase
 
     end
 
+    class_attribute :_resource_class
+    def self.added_to_resource(klass, property, options)
+      self._resource_class = klass
+    end
+
   end
 
   class Comment
+    attr_accessor :state
+    extend StateManager::Resource
+    state_manager
+  end
+
+  class ItemStates < StateManager::Base
+    state :default
+  end
+
+  class Item
+    attr_accessor :state
+    extend StateManager::Resource
+    state_manager
+  end
+
+  class BaseStateManager < StateManager::Base
+  end
+
+  class ArticleListingStates < BaseStateManager
+    state :default
+  end
+
+  class ArticleListing
     attr_accessor :state
     extend StateManager::Resource
     state_manager
@@ -87,6 +115,18 @@ class DefinitionTest < Test::Unit::TestCase
     assert_equal 'not a hipster', @resource.state_manager.reject_reason
 
     assert_state 'rejected'
+  end
+
+  def test_added_to_resource_callback
+    assert_equal Comment, @resource.state_manager.class._resource_class
+  end
+
+  def test_resource_accessor
+    assert @resource.state_manager.class.method_defined?(:comment)
+    assert @resource.state_manager.class.specification.states.values.first.method_defined?(:comment)
+    assert !@resource.state_manager.class.method_defined?(:item), 'accessor for other resource should not be defined'
+    assert !@resource.state_manager.class.method_defined?(:article_listing), 'accessor for other resource should not be defined'
+    assert ArticleListing.new.state_manager.class.method_defined?(:article_listing)
   end
 
 end

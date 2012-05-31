@@ -7,6 +7,11 @@ module StateManager
   # of an object as well as managing the transitions between states.
   class Base < State
 
+    class_attribute :_resource_class
+    class_attribute :_resource_name
+    class_attribute :_state_property
+    self._state_property = :state
+
     attr_accessor :resource, :context
 
     def initialize(resource, context={})
@@ -39,24 +44,19 @@ module StateManager
 
       from_state = current_state
       to_state = enter_states.last
-      will_transition(from_state, to_state, current_event)
 
-      # Invoke the enter/exit callbacks
+      # Before Callbacks
+      will_transition(from_state, to_state, current_event)
       exit_states.each{ |s| s.exit }
       enter_states.each{ |s| s.enter }
 
+      # Set the state on the underlying resource
       self.current_state = to_state
 
+      # After Callbacks
       exit_states.each{ |s| s.exited }
       enter_states.each{ |s| s.entered }
-
       did_transition(from_state, to_state, current_event)
-    end
-
-    def will_transition(from, to, event)
-    end
-
-    def did_transition(from, to, event)
     end
 
     # Find the states along the path from a start state
@@ -142,22 +142,33 @@ module StateManager
 
     # These methods can be overriden by an adapter
     def write_state(value)
-      resource.send "#{specification.state_property.to_s}=", value.path
+      resource.send "#{self.class._state_property.to_s}=", value.path
     end
 
     def read_state
-      resource.send specification.state_property
+      resource.send self.class._state_property
+    end
+
+    def will_transition(from, to, event)
+    end
+
+    def did_transition(from, to, event)
+    end
+
+    def self.infer_resource_name!
+      return if _resource_name
+      if name =~ /States/
+        self._resource_name = name.demodulize.gsub(/States/, '').underscore
+        create_resource_accessor!(_resource_name)
+      end
     end
 
     def self.inherited(base)
       super(base)
-      # Infer the resource name from the class name
-      if base.name =~ /States/
-        base.specification.resource_name = base.name.demodulize.gsub(/States/, '').underscore
-        base.send :define_method, base.specification.resource_name do
-          resource
-        end
-      end
+      base.infer_resource_name!
+    end
+
+    def self.added_to_resource(klass, property, options)
     end
 
     protected
