@@ -47,6 +47,9 @@ module StateManager
 
       self.current_state = to_state
 
+      exit_states.each{ |s| s.exited }
+      enter_states.each{ |s| s.entered }
+
       did_transition(from_state, to_state, current_event)
     end
 

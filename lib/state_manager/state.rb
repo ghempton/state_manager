@@ -61,6 +61,12 @@ module StateManager
     def exit
     end
 
+    def entered
+    end
+
+    def exited
+    end
+
     def to_s
       "#{path}"
     end

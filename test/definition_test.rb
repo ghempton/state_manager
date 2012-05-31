@@ -5,12 +5,6 @@ class DefinitionTest < Test::Unit::TestCase
   class CommentStates < StateManager::Base
     attr_accessor :accept_reason, :reject_reason
 
-    class Unsubmitted < StateManager::State
-
-      event :submit, :transitions_to => 'submitted.awaiting_review'
-
-    end
-
     class Submitted < StateManager::State
 
       state :awaiting_review do
@@ -49,6 +43,12 @@ class DefinitionTest < Test::Unit::TestCase
     def reject(reason)
       self.reject_reason = reason
       transition_to :rejected
+    end
+
+    class Unsubmitted
+
+      event :submit, :transitions_to => 'submitted.awaiting_review'
+
     end
 
   end

@@ -8,6 +8,8 @@ module StateManager
 
         attr_accessor :state_managers
       end
+
+      base.send :include, InstanceMethods
     end
 
     def state_manager(property=:state, klass=nil, options={}, &block)
@@ -56,6 +58,20 @@ module StateManager
       end
 
       Helpers::Methods.define_methods(klass.specification, self, property) if options[:helpers]
+    end
+
+    module InstanceMethods
+      # Ensures that all properties with state managers are in valid states
+      def validate_states!
+        self.state_managers ||= {}
+        self.class.state_managers.each do |name, klass|
+          # Simply ensuring that all of the state managers have been
+          # instantiated will make the corresponding states valid
+          unless state_managers[name]
+            state_managers[name] = klass.new(self)
+          end
+        end
+      end
     end
 
   end

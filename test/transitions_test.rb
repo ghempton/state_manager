@@ -30,21 +30,13 @@ class TransitionsTest < Test::Unit::TestCase
       @exit_counts = {}
     end
 
-    def inc_enter_count(state)
-      enter_counts[state] = 0 unless enter_counts[state]
-      enter_counts[state] = enter_counts[state] + 1
-    end
-
-    def inc_exit_count(state)
-      exit_counts[state] = 0 unless exit_counts[state]
-      exit_counts[state] = exit_counts[state] + 1
-    end
-
     initial_state :unregistered
     event :ban, :transitions_to => 'inactive.banned' do |reason=nil|
       user.notes = "Banned because: #{reason}"
     end
     state :unregistered do
+      include TrackEnterExitCounts
+
       event :register do
         if resource.paid
           transition_to 'active.premium'
@@ -121,6 +113,9 @@ class TransitionsTest < Test::Unit::TestCase
   end
 
   def test_enter_exit
+    assert_equal 1, @resource.state_manager.find_state('unregistered').enter_count
+    assert_equal 0, @resource.state_manager.find_state('unregistered').exit_count
+
     @resource.state_manager.transition_to('inactive.banned')
 
     assert_equal 1, @resource.state_manager.find_state('inactive').enter_count

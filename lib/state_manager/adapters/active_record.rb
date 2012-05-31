@@ -10,21 +10,14 @@ module StateManager
       module ResourceMethods
 
         def self.included(base)
-          base.before_validation :validate_state
+          # Make sure that the model is in a valid state before it is saved
+          base.before_validation :_validate_states
 
           base.extend(ClassMethods)
         end
 
-        # Make sure that the model is in a valid state before it is saved
-        def validate_state
-          self.state_managers ||= {}
-          self.class.state_managers.each do |name, klass|
-            # Simply ensuring that all of the state managers have been
-            # instantiated will make the corresponding states valid
-            unless state_managers[name]
-              state_managers[name] = klass.new(self)
-            end
-          end
+        def _validate_states
+          self.validate_states!
         end
 
         module ClassMethods
@@ -50,8 +43,7 @@ module StateManager
       module ManagerMethods
 
         def write_state(value)
-          super(value)
-          resource.save
+          resource.send :update_attribute, specification.state_property, value.path
         end
 
       end
