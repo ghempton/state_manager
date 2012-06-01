@@ -155,6 +155,17 @@ module StateManager
     def did_transition(from, to, event)
     end
 
+    # All events the current state will respond to
+    def available_events
+      state = current_state
+      ret = []
+      while(state) do
+        ret.concat(state.class.specification.events)
+        state = state.parent_state
+      end
+      ret
+    end
+
     def self.infer_resource_name!
       return if _resource_name
       if name =~ /States/
