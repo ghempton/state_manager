@@ -21,7 +21,7 @@ if defined?(Delayed)
           self.class.specification.events.reject{|name,event|!event[:delay]}
         end
 
-        def enter
+        def entered
           delayed_events.each do |name, event|
             delay = event[:delay]
             delayed_event = DelayedEvent.new(path, event, state_manager)
@@ -29,7 +29,7 @@ if defined?(Delayed)
           end
         end
 
-        def exit
+        def exited
           # TODO: we currently just have logic inside the job itself which
           # skips the event if it is no longer relevant. This is not perfect.
           # Ideally we should cancel events in this method (requiring an
@@ -41,11 +41,11 @@ if defined?(Delayed)
     class State
       include DelayedJob::State
 
-      def enter
+      def entered
         super
       end
 
-      def exit
+      def exited
         super
       end
     end

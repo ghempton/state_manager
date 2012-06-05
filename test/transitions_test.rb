@@ -103,12 +103,14 @@ class TransitionsTest < Test::Unit::TestCase
     @resource.paid = true
     @resource.register!
 
+    assert_equal 'register', @resource.state_manager.did_event.to_s
     assert @resource.active_premium?
 
     @resource.state_manager.transition_to 'unregistered'
     @resource.paid = false
     @resource.register!
 
+    assert_equal 'register', @resource.state_manager.did_event.to_s
     assert @resource.active_default?
   end
 

@@ -102,14 +102,11 @@ class ActiveRecordTest < Test::Unit::TestCase
     exec "INSERT INTO posts VALUES(13, NULL, NULL, 'active')"
     exec "INSERT INTO posts VALUES(14, NULL, NULL, 'active')"
 
-    old_logger = ActiveRecord::Base.logger
-    ActiveRecord::Base.logger = Logger.new(STDOUT)
     # +1 from setup
     assert_equal 1, Post.unsubmitted.count
     # +2 from setup
     assert_equal 8, Post.submitted.count
     assert_equal 4, Post.active.count
     assert_equal 0, Post.rejected.count
-    ActiveRecord::Base.logger = old_logger
   end
 end

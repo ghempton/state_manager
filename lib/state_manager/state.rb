@@ -17,7 +17,6 @@ module StateManager
       def initialize_copy(source)
         self.states = source.states.dup
         self.events = source.events.dup
-        self.initial_state = source.initial_state
       end
     end
 
@@ -93,6 +92,41 @@ module StateManager
       event = self.class.specification.events[name]
       send(name, *args) if respond_to?(name)
       transition_to(event[:transitions_to]) if event[:transitions_to]
+    end
+
+    # Find all the states along the path
+    def find_states(path)
+      state = self
+      parts = path.split('.')
+      ret = [state]
+      parts.each do |name|
+        state = state.states[name.to_sym]
+        ret << state
+        return unless state
+      end
+      ret
+    end
+
+    # Returns the state at the given path
+    def find_state(path)
+      states = find_states(path)
+      states && states.last
+    end
+
+    def leaf?
+      states.empty?
+    end
+
+    # If an initial state is not explicitly specified, we choose the first leaf
+    # state
+    def initial_state
+      if state = self.class.specification.initial_state
+        find_state(state.to_s)
+      elsif leaf?
+        self
+      else
+        states.values.first.initial_state
+      end
     end
 
     def self.create_resource_accessor!(name)

@@ -2,6 +2,7 @@ module StateManager
  
   class StateNotFound < StandardError; end;
   class InvalidEvent < StandardError; end;
+  class InvalidTransition < StandardError; end;
 
   # The base StateManager class is responsible for tracking the current state
   # of an object as well as managing the transitions between states.
@@ -31,13 +32,17 @@ module StateManager
 
       # Find the nearest parent state on the path of the current state which
       # has a sub-state at the given path
-      new_states = find_states(state, path)
+      new_states = state.find_states(path)
       while(!new_states) do
         exit_states << state
         state = state.parent_state
-        raise(StateManager::StateNotFound, path) unless state
-        new_states = find_states(state, path)
+        raise(StateNotFound, path) unless state
+        new_states = state.find_states(path)
       end
+
+      # Can only transition to leaf states
+      # TODO: transition to the initial_state of the state?
+      raise(InvalidTransition, path) unless new_states.last.leaf?
 
       enter_states = new_states - exit_states
       exit_states = exit_states - new_states
@@ -59,36 +64,9 @@ module StateManager
       did_transition(from_state, to_state, current_event)
     end
 
-    # Find the states along the path from a start state
-    def find_states(state, path)
-      parts = path.split('.')
-      ret = [state]
-      parts.each do |name|
-        state = state.states[name.to_sym]
-        ret << state
-        return unless state
-      end
-      ret
-    end
-
-    # Returns the state at the given path
-    def find_state(path)
-      states = find_states(self, path)
-      states && states.last
-    end
-
     def current_state
       path = read_state
       find_state(path) if path && !path.empty?
-    end
-
-    def initial_state
-      if state = self.class.specification.initial_state
-        find_state(state.to_s)
-      else
-        # TODO: ensure this is a leaf state
-        states.first[1]
-      end
     end
 
     def current_state=(value)
@@ -124,7 +102,7 @@ module StateManager
     end
 
     def to_s
-      "#{current_state.path}"
+      "#{current_state.path}" if current_state
     end
 
     # Returns true if the underlying object is in the state specified by the
@@ -137,7 +115,7 @@ module StateManager
     #     state_manager.in_state? 'inner' # false
     #
     def in_state?(path)
-      find_states(self, current_state.path).include? find_state(path) 
+      self.find_states(current_state.path).include? find_state(path) 
     end
 
     # These methods can be overriden by an adapter

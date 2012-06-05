@@ -123,4 +123,10 @@ class BasicTest < Test::Unit::TestCase
     @resource.workflow_state_manager.send_event! :review
   end
 
+  def test_can_only_transition_to_leaf
+    assert_raise StateManager::InvalidTransition do
+      @resource.state_manager.transition_to('submitted')
+    end
+  end
+
 end
