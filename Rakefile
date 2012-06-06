@@ -15,7 +15,7 @@ require 'jeweler'
 Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
   gem.name = "state_manager"
-  gem.homepage = "http://github.com/ghempton/statemanager"
+  gem.homepage = "http://github.com/ghempton/state_manager"
   gem.license = "MIT"
   gem.summary = "%Q{Finite state machine implementation.}"
   gem.description = %Q{Finite state machine implementation that keeps logic separate from model classes and supports sub-states.}

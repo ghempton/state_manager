@@ -45,7 +45,7 @@ Gem::Specification.new do |s|
     "test/plugins/delayed_job_test.rb",
     "test/transitions_test.rb"
   ]
-  s.homepage = "http://github.com/ghempton/statemanager"
+  s.homepage = "http://github.com/ghempton/state_manager"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
   s.rubygems_version = "1.8.15"
