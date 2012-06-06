@@ -5,7 +5,7 @@ StateManager is a state machine implementation for Ruby that is heavily inspired
 * Sub-states are supported (e.g. 'submitted.reviewing').
 * State logic can be kept separate from model classes.
 * State definitions are modular, underlying each state is a separate class definition.
-# Supports integrations. Comes out of the box with an integration with active_record and delayed_job to support automatic delayed transtions.
+* Supports integrations. Comes out of the box with an integration with active_record and delayed_job to support automatic delayed transtions.
 
 We believe this is an improvement over existing state machines, but just for good measure, check out [state_machine](https://github.com/pluginaweek/state_machine) and [workflow](https://github.com/geekq/workflow).
 
@@ -123,11 +123,11 @@ class PostStates < StateManager::Base
 end
 ```
 
-States and events really just correspond to classes and methods of the state manager.
-
 ## Under the Hood
 
-Under the hood, the `state_manager` macro makes an instance of a StateManager::Base subclass available through the "#{property}_manager" attribute on the resource. The above examples of helper methods is essentially syntactic sugar on the following:
+As suggested in the above example, states and events really just correspond to classes and methods of the state manager. In fact, the `state` macro is really just syntactic sugar around defining a `StateManager::State` subclass to the current state--the root state manager is also a state.
+
+On the resource, the `state_manager` macro makes an instance of the specified `StateManager::Base` subclass available through the "#{property}_manager" attribute on the resource. The above examples of helper methods is essentially syntactic sugar on the following:
 
 ```ruby
 post = Post.new
@@ -142,8 +142,8 @@ post.state_manager.in_state?('submitted')? # true, the 'submitted' state is a pa
 Furthermore, only leaf states are valid states for a resource. The state manager can also be explicitly transitioned to a state, however this should normally only be used inside an event handler:
 
 ```ruby
-post.state_manager.transition_to?('submitted.awaiting_review')? # puts the post is in the 'submitted.awaiting_review' state
-post.state_manager.transition_to?('submitted')? # throws a StateManager::InvalidState error, 'submitted' is not a leaf state
+post.state_manager.transition_to('submitted.awaiting_review') # puts the post is in the 'submitted.awaiting_review' state
+post.state_manager.transition_to('submitted') # throws a StateManager::InvalidState error, 'submitted' is not a leaf state
 ```
 
 By default, the initial state will be the first state that was defined. This can be customized by setting the initial state:
@@ -153,6 +153,13 @@ class PostStates < StateManager::Base
   initial_state :rejected
   ...
 end
+```
+
+The current state can also be accessed from the state manager:
+
+```ruby
+post.state_manager.current_state.name # 'awaiting_review'
+post.state_manager.current_state.path # 'submitted.awaiting_review'
 ```
 
 ## Callbacks
@@ -199,11 +206,11 @@ class PostStates < StateManager::Base
 end
 ```
 
-In the above example, transitioning between 'submitted.awaiting_review' and 'submitted.reviewing' will not call the the enter/exit callbacks for the 'submitted' state, however it will be called for the children.
+In the above example, transitioning between 'submitted.awaiting_review' and 'submitted.reviewing' will *not* trigger the the enter/exit callbacks for the 'submitted' state, however it will be called for the two sub-states.
 
-## Delayed Job
+## Delayed Job Integration
 
-StateManager comes out of the box with support for [delayed_job](https://github.com/tobi/delayed_job). If delayed_job is available, events can be defined with an `:delay` property which indicates that the event should automatically be called after that delay. For example:
+StateManager comes out of the box with support for [delayed_job](https://github.com/tobi/delayed_job). If delayed_job is available, events can be defined with a `:delay` property which indicates a delay after which the event should automatically be triggered:
 
 ```ruby
 class UserStates < StateManager::Base
