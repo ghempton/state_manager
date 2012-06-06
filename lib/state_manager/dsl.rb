@@ -14,7 +14,7 @@ module StateManager
         else
           Class.new(StateManager::State)
         end
-        klass = Class.new(klass, &block) if block
+        klass = Class.new(klass, &block) if block_given?
 
         remove_const const_name if const_defined?(const_name)
         const_set(const_name, klass)
@@ -28,7 +28,7 @@ module StateManager
         event = options.dup
         event[:name] = name
         specification.events[name] = event
-        define_method name, &block if block
+        define_method name, &block if block_given?
       end
 
       # Helper to simplify creating dsl reader methods for specification

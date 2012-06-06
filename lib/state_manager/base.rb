@@ -136,9 +136,9 @@ module StateManager
     # All events the current state will respond to
     def available_events
       state = current_state
-      ret = []
+      ret = {}
       while(state) do
-        ret.concat(state.class.specification.events)
+        ret = state.class.specification.events.merge(ret)
         state = state.parent_state
       end
       ret

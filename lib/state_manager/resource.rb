@@ -34,7 +34,7 @@ module StateManager
         resource_class this
         resource_name resource_name
         include adapter.const_get('ManagerMethods') if adapter
-        class_eval &block if block
+        class_eval &block if block_given?
       end
       include adapter.const_get('ResourceMethods') if adapter
 
