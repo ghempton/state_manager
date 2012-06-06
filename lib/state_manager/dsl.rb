@@ -31,18 +31,6 @@ module StateManager
         define_method name, &block if block_given?
       end
 
-      # Helper to simplify creating dsl reader methods for specification
-      # properties
-      module_eval do
-        def self.spec_property(name)
-          class_eval do
-            define_method name do |value|
-              specification.send "#{name}=", value
-            end
-          end
-        end
-      end
-
       # The initial state
       def initial_state(value)
         specification.initial_state = value
