@@ -1,4 +1,4 @@
-require 'active_support/core_ext'
+require 'active_support/all'
 
 module StateManager
   module DSL
@@ -8,9 +8,9 @@ module StateManager
       def state(name, klass=nil, &block)
         # If no base class is specified we look for a class inside the current
         # state's class which has the same name as the state
-        const_name = name.capitalize
+        const_name = name.to_s.classify
         klass ||= if const_defined?(const_name)
-          self.const_get(name.capitalize)
+          self.const_get(const_name)
         else
           Class.new(StateManager::State)
         end

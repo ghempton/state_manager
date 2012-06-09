@@ -74,6 +74,11 @@ class DelayedJobTest < Test::Unit::TestCase
   def time_warp(duration)
     Timecop.travel(duration.from_now)
     Delayed::Worker.new.work_off
+
+    # Check for any errors inside the delayed job
+    jobs = Delayed::Job.where('last_error IS NOT NULL')
+    error = jobs.last && jobs.last.last_error
+    raise "Delayed job error: #{error}" if error
   end
 
   def test_delayed_event
