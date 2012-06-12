@@ -129,4 +129,11 @@ class BasicTest < Test::Unit::TestCase
     end
   end
 
+  def test_transition_to_current_state
+    @resource = PostWithInitialState.new
+    assert_state 'submitted.awaiting_review'
+    @resource.state_manager.transition_to('submitted.awaiting_review')
+    assert_state 'submitted.awaiting_review'
+  end
+
 end

@@ -98,7 +98,7 @@ module StateManager
     def find_states(path)
       state = self
       parts = path.split('.')
-      ret = [state]
+      ret = []
       parts.each do |name|
         state = state.states[name.to_sym]
         ret << state

@@ -40,6 +40,9 @@ module StateManager
         new_states = state.find_states(path)
       end
 
+      # The first time we enter a state, the state_manager gets entered as well
+      new_states.unshift(self) unless has_state?
+
       # Can only transition to leaf states
       # TODO: transition to the initial_state of the state?
       raise(InvalidTransition, path) unless new_states.last.leaf?
@@ -48,7 +51,9 @@ module StateManager
       exit_states = exit_states - new_states
 
       from_state = current_state
-      to_state = enter_states.last
+      # TODO: does it make more sense to throw an error instead of allowing
+      # a transition to the current state?
+      to_state = enter_states.last || from_state
 
       # Before Callbacks
       will_transition(from_state, to_state, current_event)
@@ -102,7 +107,8 @@ module StateManager
     end
 
     def to_s
-      "#{current_state.path}" if current_state
+      path = "#{current_state.path}" if current_state
+      "#<%s:0x%x:%s>" % [self.class, object_id, path]
     end
 
     # Returns true if the underlying object is in the state specified by the
@@ -116,6 +122,11 @@ module StateManager
     #
     def in_state?(path)
       self.find_states(current_state.path).include? find_state(path) 
+    end
+
+    # Will not have a state if the state is invalid or nil
+    def has_state?
+      !!current_state
     end
 
     # These methods can be overriden by an adapter
