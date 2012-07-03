@@ -16,7 +16,7 @@ GEM
     binding_of_caller (0.6.7)
     builder (3.0.0)
     coderay (1.0.6)
-    delayed_job (3.0.1)
+    delayed_job (3.0.3)
       activesupport (~> 3.0)
     delayed_job_active_record (0.3.2)
       activerecord (> 2.1.0)
