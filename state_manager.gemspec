@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "state_manager"
-  s.version = "0.2.7"
+  s.version = "0.2.8"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Gordon Hempton"]
-  s.date = "2012-07-03"
+  s.date = "2012-07-30"
   s.description = "Finite state machine implementation that keeps logic separate from model classes and supports sub-states."
   s.email = "ghempton@gmail.com"
   s.extra_rdoc_files = [
@@ -49,7 +49,7 @@ Gem::Specification.new do |s|
   s.homepage = "http://github.com/ghempton/state_manager"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.15"
+  s.rubygems_version = "1.8.23"
   s.summary = "%Q{Finite state machine implementation.}"
 
   if s.respond_to? :specification_version then
