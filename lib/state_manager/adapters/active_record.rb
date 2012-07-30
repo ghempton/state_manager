@@ -43,7 +43,13 @@ module StateManager
       module ManagerMethods
 
         def write_state(value)
-          resource.send :update_attribute, self.class._state_property, value.path
+          # Since new objects will have a nil state value, this method will be called
+          # during instantiation. We want to hold off on writing to the database.
+          if resource.new_record?
+            resource.send :write_attribute, self.class._state_property, value.path
+          else
+            resource.send :update_attribute, self.class._state_property, value.path
+          end
         end
 
       end

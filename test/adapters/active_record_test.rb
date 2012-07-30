@@ -89,6 +89,16 @@ class ActiveRecordTest < Test::Unit::TestCase
     assert_state 'unsubmitted'
   end
 
+  def test_new_record
+    @resource = Post.new
+    assert_state 'unsubmitted'
+    assert @resource.new_record?, 'record should not have been persisted'
+    @resource.save
+    @resource.submit!
+    assert_state 'submitted.awaiting_review'
+    assert !@resource.new_record?, 'record should be persisted'
+  end
+
   def test_scopes
     exec "INSERT INTO posts VALUES(5, NULL, NULL, 'submitted.reviewing')"
     exec "INSERT INTO posts VALUES(6, NULL, NULL, 'submitted.reviewing')"
