@@ -52,7 +52,6 @@ module StateManager
       state_managers[property] = klass
       property_name = "#{property.to_s}_manager"
       define_method property_name do
-        self.state_managers ||= {}
         state_manager = state_managers[property]
         unless state_manager
           state_manager = klass.new(self)
@@ -66,9 +65,13 @@ module StateManager
     end
 
     module InstanceMethods
+      def initialize(*args)
+        super(*args)
+        self.state_managers ||= {}
+      end
+
       # Ensures that all properties with state managers are in valid states
       def validate_states!
-        self.state_managers ||= {}
         self.class.state_managers.each do |name, klass|
           # Simply ensuring that all of the state managers have been
           # instantiated will make the corresponding states valid

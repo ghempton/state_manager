@@ -13,7 +13,9 @@ module StateManager
       module ResourceMethods
 
         def self.included(base)
-          # Make sure that the model is in a valid state before it is saved
+          base.after_initialize do
+            self.state_managers ||= {}
+          end
           base.before_validation do
             validate_states!
           end
