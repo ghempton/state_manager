@@ -87,11 +87,12 @@ module StateManager
       !!self.class.specification.events[name]
     end
 
-    def send_event(name, *args)
+    def perform_event(name, *args)
       name = name.to_sym
       event = self.class.specification.events[name]
-      send(name, *args) if respond_to?(name)
+      result = send(name, *args) if respond_to?(name)
       transition_to(event[:transitions_to]) if event[:transitions_to]
+      result
     end
 
     # Find all the states along the path

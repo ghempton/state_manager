@@ -1,6 +1,9 @@
 module StateManager
   module Adapters
     module ActiveRecord
+
+      class DirtyTransition < StandardError; end;
+
       include Base
 
       def self.matching_ancestors
@@ -11,7 +14,15 @@ module StateManager
 
         def self.included(base)
           # Make sure that the model is in a valid state before it is saved
-          base.before_validation :_validate_states
+          base.before_validation do
+            validate_states!
+          end
+          base.before_save do
+            state_managers.values.map(&:before_save)
+          end
+          base.after_save do
+            state_managers.values.map(&:after_save)
+          end
 
           base.extend(ClassMethods)
         end
@@ -42,14 +53,46 @@ module StateManager
 
       module ManagerMethods
 
-        def write_state(value)
-          # Since new objects will have a nil state value, this method will be called
-          # during instantiation. We want to hold off on writing to the database.
-          if resource.new_record?
-            resource.send :write_attribute, self.class._state_property, value.path
-          else
-            resource.send :update_attribute, self.class._state_property, value.path
+        attr_accessor :pending_transition
+
+        def self.included(base)
+          base.class_eval do
+            alias_method :_run_before_callbacks, :run_before_callbacks
+            alias_method :_run_after_callbacks, :run_after_callbacks
+
+            # In the AR use case, we don't want to run any callbacks
+            # until the model has been saved
+            def run_before_callbacks(*args)
+              self.pending_transition = args
+            end
+
+            def run_after_callbacks(*args)
+            end
           end
+        end  
+
+        def transition_to(path)
+          raise(DirtyTransition, "Only one state transition may be performed before saving a record. This error could be caused by the record being initialized to a default state.") if pending_transition
+          super(path)
+        end
+
+        def before_save
+          return unless pending_transition
+          _run_before_callbacks(*pending_transition)
+        end
+
+        def after_save
+          return unless pending_transition
+          _run_after_callbacks(*pending_transition)
+          self.pending_transition = nil
+        end
+
+        def write_state(value)
+          resource.send :write_attribute, self.class._state_property, value.path
+        end
+
+        def persist_state
+          resource.save
         end
 
       end

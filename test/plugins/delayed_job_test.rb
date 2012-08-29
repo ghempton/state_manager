@@ -63,28 +63,11 @@ class DelayedJobTest < Test::Unit::TestCase
     state_manager
   end
 
-  def teardown
-    ActiveRecord::Base.connection.disconnect!
-    Timecop.return
-  end
-
-
-  # Convince delayed job that the duration has passed and perform any jobs that
-  # need doing
-  def time_warp(duration)
-    Timecop.travel(duration.from_now)
-    Delayed::Worker.new.work_off
-
-    # Check for any errors inside the delayed job
-    jobs = Delayed::Job.where('last_error IS NOT NULL')
-    error = jobs.last && jobs.last.last_error
-    raise "Delayed job error: #{error}" if error
-  end
-
   def test_delayed_event
     @resource = Project.find(1)
-    
     assert_state 'unsubmitted.initial'
+    assert_equal 0, Delayed::Job.count
+    @resource.save
     assert_equal 1, Delayed::Job.count
 
     time_warp(4.hours)
@@ -104,22 +87,23 @@ class DelayedJobTest < Test::Unit::TestCase
 
   def test_expired_event
     @resource = Project.find(1)
-
     assert_state 'unsubmitted.initial'
+    @resource.save
     assert_equal 1, Delayed::Job.count
 
     @resource.submit!
 
     assert_state 'submitted'
 
-    time_warp(4.hours)
+    time_warp(1.month)
 
+    assert_equal 0, Delayed::Job.count
     assert_state 'submitted', 'should not have transitioned'
   end
 
   def test_event_name_clashes
     @resource = Project.find(1)
-
+    @resource.save
     assert_state 'unsubmitted.initial'
     assert_equal 1, Delayed::Job.count
 
@@ -131,6 +115,14 @@ class DelayedJobTest < Test::Unit::TestCase
     time_warp(1.month)
 
     assert_state 'accepted', 'remind event should not have been triggered'
+  end
+
+  def test_new_record
+    @resource = Project.create
+    assert_state 'unsubmitted.initial'
+    time_warp(1.day)
+    @resource.reload
+    assert_state 'unsubmitted.reminded'
   end
 
 end

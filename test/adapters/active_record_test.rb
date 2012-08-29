@@ -3,6 +3,9 @@ require 'helper'
 class ActiveRecordTest < Test::Unit::TestCase
 
   class PostStates < StateManager::Base
+    attr_accessor :before_callbacks_called
+    attr_accessor :after_callbacks_called
+
     state :unsubmitted do
       event :submit, :transitions_to => 'submitted.awaiting_review'
     end
@@ -20,6 +23,14 @@ class ActiveRecordTest < Test::Unit::TestCase
     end
     state :active
     state :rejected
+
+    def will_transition(*args)
+      self.before_callbacks_called = true
+    end
+
+    def did_transition(*args)
+      self.after_callbacks_called = true
+    end
   end
 
   class Post < ActiveRecord::Base
@@ -67,7 +78,12 @@ class ActiveRecordTest < Test::Unit::TestCase
   def test_persist_initial_state
     @resource = Post.find(1)
     assert_state 'unsubmitted'
-    assert !@resource.changed?, "state should have been persisted"
+    assert !@resource.state_manager.before_callbacks_called
+    assert !@resource.state_manager.after_callbacks_called
+    assert @resource.changed?, "state should not have been persisted"
+    @resource.save
+    assert @resource.state_manager.before_callbacks_called
+    assert @resource.state_manager.after_callbacks_called
   end
 
   def test_initial_state_value
@@ -118,5 +134,22 @@ class ActiveRecordTest < Test::Unit::TestCase
     assert_equal 8, Post.submitted.count
     assert_equal 4, Post.active.count
     assert_equal 0, Post.rejected.count
+  end
+
+  def test_multiple_transitions
+    @resource = Post.find(2)
+    @resource.submit!
+    assert_state 'submitted.awaiting_review'
+    @resource.review!
+    assert_state 'submitted.reviewing'
+  end
+
+  def test_dirty_transition
+    @resource = Post.find(2)
+    @resource.state_manager.send_event :submit
+    assert_state 'submitted.awaiting_review'
+    assert_raise(StateManager::Adapters::ActiveRecord::DirtyTransition) do
+      @resource.state_manager.send_event :review
+    end
   end
 end

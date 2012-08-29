@@ -55,18 +55,12 @@ module StateManager
       # a transition to the current state?
       to_state = enter_states.last || from_state
 
-      # Before Callbacks
-      will_transition(from_state, to_state, current_event)
-      exit_states.each{ |s| s.exit }
-      enter_states.each{ |s| s.enter }
+      run_before_callbacks(from_state, to_state, current_event, enter_states, exit_states)
 
       # Set the state on the underlying resource
       self.current_state = to_state
 
-      # After Callbacks
-      exit_states.each{ |s| s.exited }
-      enter_states.each{ |s| s.entered }
-      did_transition(from_state, to_state, current_event)
+      run_after_callbacks(from_state, to_state, current_event, enter_states, exit_states)
     end
 
     def current_state
@@ -78,16 +72,19 @@ module StateManager
       write_state(value)
     end
 
-    # Send an event to the current state.
-    #
-    # Unlike the regular send_event method, this method recursively walks the
-    # path of states starting at the current state.
     def send_event!(name, *args)
+      result = send_event(name, *args)
+      persist_state
+      result
+    end
+
+    def send_event(name, *args)
       self.current_event = name
       state = find_state_for_event(name)
       raise(InvalidEvent, name) unless state
-      state.send_event name, *args
+      result = state.perform_event name, *args
       self.current_event = nil
+      result
     end
 
     def respond_to_event?(name)
@@ -138,6 +135,9 @@ module StateManager
       resource.send self.class._state_property
     end
 
+    def persist_state
+    end
+
     def will_transition(from, to, event)
     end
 
@@ -174,6 +174,18 @@ module StateManager
     protected
 
     attr_accessor :current_event
+
+    def run_before_callbacks(from_state, to_state, current_event, enter_states, exit_states)
+      will_transition(from_state, to_state, current_event)
+      exit_states.each{ |s| s.exit }
+      enter_states.each{ |s| s.enter }
+    end
+
+    def run_after_callbacks(from_state, to_state, current_event, enter_states, exit_states)
+      exit_states.each{ |s| s.exited }
+      enter_states.each{ |s| s.entered }
+      did_transition(from_state, to_state, current_event)
+    end
 
   end
 
