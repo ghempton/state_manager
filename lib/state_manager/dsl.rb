@@ -9,14 +9,14 @@ module StateManager
         # If no base class is specified we look for a class inside the current
         # state's class which has the same name as the state
         const_name = name.to_s.classify
-        klass ||= if const_defined?(const_name)
+        klass ||= if const_defined?(const_name, false)
           self.const_get(const_name)
         else
           Class.new(StateManager::State)
         end
         klass = Class.new(klass, &block) if block_given?
 
-        remove_const const_name if const_defined?(const_name)
+        remove_const const_name if const_defined?(const_name, false)
         const_set(const_name, klass)
 
         specification.states[name.to_sym] = klass

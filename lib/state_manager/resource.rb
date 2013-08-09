@@ -45,7 +45,7 @@ module StateManager
       # Define the subclass as a constant. We do this for multiple reasons, one
       # of which is to allow it to be serialized to YAML for delayed_job
       const_name = "#{property.to_s.camelize}States"
-      remove_const const_name if const_defined?(const_name)
+      remove_const const_name if const_defined?(const_name, false)
       const_set(const_name, klass)
 
       # Create an accessor for the state manager on this resource
