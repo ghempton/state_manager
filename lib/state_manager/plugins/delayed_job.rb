@@ -23,7 +23,11 @@ if defined?(Delayed)
 
         def entered
           delayed_events.each do |name, event|
-            delay = event[:delay]
+            delay = if event[:delay].is_a? Proc
+              instance_exec(&event[:delay])
+            else
+              event[:delay]
+            end
             delayed_event = DelayedEvent.new(path, event, state_manager)
             Delayed::Job.enqueue delayed_event, :run_at => delay.from_now
           end

@@ -14,13 +14,19 @@ class DelayedJobTest < Test::Unit::TestCase
     end
     state :submitted do
       event :accept, :transitions_to => 'accepted'
-      event :auto_accept, :transitions_to => 'accepted', :delay => 1.day
+      event :auto_accept, :transitions_to => 'accepted', :delay => lambda { delay }
       event :reject, :transitions_to => 'rejected'
     end
     state :accepted do
       event :remind, :transitions_to => 'rejected'
     end
     state :rejected
+
+    class Submitted
+      def delay
+        1.day
+      end
+    end
   end
 
   def exec(sql)
