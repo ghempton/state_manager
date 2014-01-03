@@ -14,7 +14,7 @@ class DelayedJobTest < Test::Unit::TestCase
     end
     state :submitted do
       event :accept, :transitions_to => 'accepted'
-      event :auto_accept, :transitions_to => 'accepted', :delay => lambda { delay }
+      event :auto_accept, :transitions_to => 'accepted', :delay => :delay
       event :reject, :transitions_to => 'rejected'
     end
     state :accepted do

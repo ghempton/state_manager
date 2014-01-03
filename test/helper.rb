@@ -11,7 +11,6 @@ require 'test/unit'
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
-require 'pry'
 require 'delayed_job_active_record'
 require 'state_manager'
 require 'timecop'

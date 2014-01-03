@@ -25,6 +25,8 @@ if defined?(Delayed)
           delayed_events.each do |name, event|
             delay = if event[:delay].is_a? Proc
               instance_exec(&event[:delay])
+            elsif event[:delay].is_a? Symbol
+              send event[:delay]
             else
               event[:delay]
             end
