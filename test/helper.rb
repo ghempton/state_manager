@@ -15,7 +15,6 @@ require 'delayed_job_active_record'
 require 'state_manager'
 require 'timecop'
 require 'database_cleaner'
-require 'byebug'
 
 DatabaseCleaner.strategy = :truncation
 

@@ -9,5 +9,4 @@ group :development do
   gem 'sqlite3'
   gem 'timecop'
   gem 'database_cleaner'
-  gem 'byebug'
 end
