@@ -20,12 +20,22 @@ module StateManager
       self.resource = resource
       self.context = context
 
-      transition_to(initial_state.path) unless current_state
+      if perform_initial_transition?
+        initial_path = current_state && current_state.path || initial_state.path
+        transition_to initial_path, nil
+      end
+    end
+    
+    # In the case of a new model, we wan't to transition into the initial state
+    # and fire the appropriate callbacks. The default behavior is to just check
+    # if the state field is nil.
+    def perform_initial_transition?
+      !current_state
     end
 
     # Transitions to the state at the specified path. The path can be relative
     # to any state along the current state's path.
-    def transition_to(path)
+    def transition_to(path, current_state=self.current_state)
       path = path.to_s
       state = current_state || self
       exit_states = []

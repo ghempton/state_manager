@@ -23,6 +23,14 @@ class ActiveRecordTest < Minitest::Test
     end
     state :active
     state :rejected
+    
+    attr_accessor :unsubmitted_entered_count
+    attr_accessor :active_entered_count
+    def initialize(*args)
+      super
+      @unsubmitted_entered_count = 0
+      @active_entered_count = 0
+    end
 
     def will_transition(*args)
       self.before_callbacks_called = true
@@ -31,6 +39,23 @@ class ActiveRecordTest < Minitest::Test
     def did_transition(*args)
       self.after_callbacks_called = true
     end
+    
+    class Unsubmitted
+      
+      def entered
+        state_manager.unsubmitted_entered_count += 1
+      end
+      
+    end
+    
+    class Active
+      
+      def entered
+        state_manager.active_entered_count += 1
+      end
+      
+    end
+    
   end
 
   class Post < ActiveRecord::Base
@@ -183,6 +208,19 @@ class ActiveRecordTest < Minitest::Test
       @resource.save
       assert !@resource.state_manager.after_callbacks_called
     end
+    assert_equal @resource.state_manager.unsubmitted_entered_count, 1
+    assert @resource.state_manager.after_callbacks_called
+  end
+  
+  def test_after_commit_callback_on_different_initial_state
+    Post2.transaction do
+      @resource = Post2.new(:state => 'active')
+      assert !@resource.state_manager.after_callbacks_called
+      @resource.save
+      assert !@resource.state_manager.after_callbacks_called
+    end
+    assert_equal @resource.state_manager.unsubmitted_entered_count, 0
+    assert_equal @resource.state_manager.active_entered_count, 1
     assert @resource.state_manager.after_callbacks_called
   end
 end

@@ -78,9 +78,9 @@ module StateManager
           end
         end  
 
-        def transition_to(path)
+        def transition_to(*args)
           raise(DirtyTransition, "Only one state transition may be performed before saving a record. This error could be caused by the record being initialized to a default state.") if pending_transition
-          super(path)
+          super
         end
 
         def before_save
@@ -100,6 +100,10 @@ module StateManager
 
         def persist_state
           resource.save
+        end
+        
+        def perform_initial_transition?
+          !current_state || resource.new_record?
         end
 
       end
