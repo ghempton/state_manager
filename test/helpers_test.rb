@@ -1,6 +1,6 @@
 require 'helper'
 
-class HelpersTest < Test::Unit::TestCase
+class HelpersTest < Minitest::Test
 
   class ItemStates < StateManager::Base
     state :default do

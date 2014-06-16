@@ -7,15 +7,23 @@ rescue Bundler::BundlerError => e
   $stderr.puts "Run `bundle install` to install missing gems"
   exit e.status_code
 end
-require 'test/unit'
+require 'minitest/autorun'
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'delayed_job_active_record'
 require 'state_manager'
 require 'timecop'
+require 'database_cleaner'
+require 'byebug'
 
-class Test::Unit::TestCase
+DatabaseCleaner.strategy = :truncation
+
+class Minitest::Test
+  
+  def teardown
+    Timecop.return
+  end
 
   def assert_state(path, state_manager=nil, message=nil)
     if state_manager.is_a? String
@@ -24,11 +32,6 @@ class Test::Unit::TestCase
     end
     state_manager ||= @resource.state_manager
     assert_equal path, state_manager.current_state.path
-  end
-
-  def teardown
-    ActiveRecord::Base.connection.disconnect!
-    Timecop.return
   end
 
   # Convince delayed job that the duration has passed and perform any jobs that

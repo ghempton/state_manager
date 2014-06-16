@@ -1,7 +1,7 @@
 require 'helper'
 require 'timecop'
 
-class DelayedJobTest < Test::Unit::TestCase
+class DelayedJobTest < Minitest::Test
 
   class ProjectStates < StateManager::Base
     initial_state 'unsubmitted.initial'
@@ -41,7 +41,6 @@ class DelayedJobTest < Test::Unit::TestCase
 
     ActiveRecord::Schema.define do
       create_table :projects do |t|
-        t.integer :id
         t.string :title
         t.string :state
       end

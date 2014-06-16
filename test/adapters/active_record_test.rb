@@ -1,6 +1,6 @@
 require 'helper'
 
-class ActiveRecordTest < Test::Unit::TestCase
+class ActiveRecordTest < Minitest::Test
 
   class PostStates < StateManager::Base
     attr_accessor :before_callbacks_called
@@ -37,6 +37,12 @@ class ActiveRecordTest < Test::Unit::TestCase
     extend StateManager::Resource
     state_manager
   end
+  
+  class Post2 < ActiveRecord::Base
+    self.table_name = 'posts'
+    extend StateManager::Resource
+    state_manager(:state, PostStates, :save_callback => :after_commit)
+  end
 
   def exec(sql)
     ActiveRecord::Base.connection.execute sql
@@ -50,7 +56,6 @@ class ActiveRecordTest < Test::Unit::TestCase
 
     ActiveRecord::Schema.define do
       create_table :posts do |t|
-        t.integer :id
         t.string :title
         t.string :body
         t.string :state
@@ -63,9 +68,11 @@ class ActiveRecordTest < Test::Unit::TestCase
     exec "INSERT INTO posts VALUES(4, NULL, NULL, 'submitted.bad_state')"
 
     @resource = nil
+    DatabaseCleaner.start
   end
 
   def teardown
+    DatabaseCleaner.clean
     ActiveRecord::Base.connection.disconnect!
   end
 
@@ -81,9 +88,11 @@ class ActiveRecordTest < Test::Unit::TestCase
     assert !@resource.state_manager.before_callbacks_called
     assert !@resource.state_manager.after_callbacks_called
     assert @resource.changed?, "state should not have been persisted"
-    @resource.save
-    assert @resource.state_manager.before_callbacks_called
-    assert @resource.state_manager.after_callbacks_called
+    @resource.transaction do
+      @resource.save
+      assert @resource.state_manager.before_callbacks_called
+      assert @resource.state_manager.after_callbacks_called
+    end
   end
 
   def test_initial_state_value
@@ -148,8 +157,32 @@ class ActiveRecordTest < Test::Unit::TestCase
     @resource = Post.find(2)
     @resource.state_manager.send_event :submit
     assert_state 'submitted.awaiting_review'
-    assert_raise(StateManager::Adapters::ActiveRecord::DirtyTransition) do
+    assert_raises(StateManager::Adapters::ActiveRecord::DirtyTransition) do
       @resource.state_manager.send_event :review
     end
+  end
+  
+  def test_after_commit_callback
+    @resource = Post2.find(1)
+    assert_state 'unsubmitted'
+    assert !@resource.state_manager.before_callbacks_called
+    assert !@resource.state_manager.after_callbacks_called
+    assert @resource.changed?, "state should not have been persisted"
+    @resource.transaction do
+      @resource.save!
+      assert @resource.state_manager.before_callbacks_called
+      assert !@resource.state_manager.after_callbacks_called
+    end
+    assert @resource.state_manager.after_callbacks_called
+  end
+  
+  def test_after_commit_callback_on_create
+    Post2.transaction do
+      @resource = Post2.new
+      assert !@resource.state_manager.after_callbacks_called
+      @resource.save
+      assert !@resource.state_manager.after_callbacks_called
+    end
+    assert @resource.state_manager.after_callbacks_called
   end
 end

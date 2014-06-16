@@ -1,6 +1,6 @@
 require 'helper'
 
-class DefinitionTest < Test::Unit::TestCase
+class DefinitionTest < Minitest::Test
 
   class CommentStates < StateManager::Base
     attr_accessor :accept_reason, :reject_reason

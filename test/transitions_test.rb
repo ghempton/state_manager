@@ -1,6 +1,6 @@
 require 'helper'
 
-class TransitionsTest < Test::Unit::TestCase
+class TransitionsTest < Minitest::Test
 
   class UserStates < StateManager::Base
     module TrackEnterExitCounts

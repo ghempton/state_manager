@@ -1,6 +1,6 @@
 require 'helper'
 
-class BasicTest < Test::Unit::TestCase
+class BasicTest < Minitest::Test
 
   class PostStates < StateManager::Base
     state :unsubmitted do
@@ -87,7 +87,7 @@ class BasicTest < Test::Unit::TestCase
 
     assert_state 'rejected', 'state should have transitioned'
   
-    assert_raise StateManager::StateNotFound do
+    assert_raises StateManager::StateNotFound do
       @resource.state_manager.transition_to 'reviewing'
     end
   end
@@ -98,7 +98,7 @@ class BasicTest < Test::Unit::TestCase
     assert_equal @resource.state_manager.current_state.path, 'submitted.awaiting_review', 'state should have transitioned'
     assert_equal @resource.state, 'submitted.awaiting_review', 'state should have been written'
 
-    assert_raise StateManager::InvalidEvent do
+    assert_raises StateManager::InvalidEvent do
       @resource.state_manager.send_event! :submit
     end
     assert_equal @resource.state, 'submitted.awaiting_review', 'state should not have changed'
@@ -115,7 +115,7 @@ class BasicTest < Test::Unit::TestCase
     assert_equal @resource.workflow_state_manager.current_state.path, 'submitted.awaiting_review', 'state should have transitioned'
     assert_equal @resource.workflow_state, 'submitted.awaiting_review', 'state should have been written'
 
-    assert_raise StateManager::InvalidEvent do
+    assert_raises StateManager::InvalidEvent do
       @resource.workflow_state_manager.send_event! :submit
     end
     assert_equal @resource.workflow_state, 'submitted.awaiting_review', 'state should not have changed'
@@ -124,7 +124,7 @@ class BasicTest < Test::Unit::TestCase
   end
 
   def test_can_only_transition_to_leaf
-    assert_raise StateManager::InvalidTransition do
+    assert_raises StateManager::InvalidTransition do
       @resource.state_manager.transition_to('submitted')
     end
   end

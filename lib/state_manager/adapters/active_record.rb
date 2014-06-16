@@ -13,26 +13,13 @@ module StateManager
       module ResourceMethods
 
         def self.included(base)
-          base.after_initialize do
-            self.state_managers ||= {}
-          end
-          base.before_validation do
-            validate_states!
-          end
-          base.before_save do
-            state_managers.values.map(&:before_save)
-          end
-          base.after_save do
-            state_managers.values.map(&:after_save)
-          end
-
           base.extend(ClassMethods)
         end
 
         def _validate_states
           self.validate_states!
         end
-
+        
         module ClassMethods
           def state_manager_added(property, klass, options)
             class_eval do
@@ -46,6 +33,24 @@ module StateManager
                   like_term = "#{state.to_s}.%"
                   where(query, state, like_term)
                 }
+              end
+              
+              after_initialize do
+                self.state_managers ||= {}
+              end
+              before_validation do
+                validate_states!
+              end
+              before_save do
+                state_managers.values.map(&:before_save)
+              end
+              
+              save_callback = options[:save_callback] && options[:save_callback].to_sym
+              if save_callback == :after_commit
+                after_commit(:on => :create) { state_managers.values.map(&:after_save) }
+                after_commit(:on => :update) { state_managers.values.map(&:after_save) }
+              else # defaults to after_save
+                after_save { state_managers.values.map(&:after_save) }
               end
             end 
           end
