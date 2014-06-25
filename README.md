@@ -208,6 +208,10 @@ end
 
 In the above example, transitioning between 'submitted.awaiting_review' and 'submitted.reviewing' will *not* trigger the the enter/exit callbacks for the 'submitted' state, however it will be called for the two sub-states.
 
+## ActiveRecord
+
+StateManager works out of the box with ActiveRecord. `enter`, `entered`, `exit`, and `exited` callbacks match up to their equivalent ActiveRecord callbacks: `before_save` and `after_save`. In addition there are `enter_committed` and `exit_committed` ActiveRecord-specific callbacks that are triggered when a transtion has been committed to the underlying database. These hooks are useful for actions that are performed external to the database (e.g. enqueuing to an external task worker).
+
 ## Delayed Job Integration
 
 StateManager comes out of the box with support for [delayed_job](https://github.com/tobi/delayed_job). If delayed_job is available, events can be defined with a `:delay` property which indicates a delay after which the event should automatically be triggered:

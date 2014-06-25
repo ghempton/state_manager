@@ -8,6 +8,7 @@ class ActiveRecordTest < Minitest::Test
 
     state :unsubmitted do
       event :submit, :transitions_to => 'submitted.awaiting_review'
+      event :activate, :transitions_to => 'active'
     end
     state :submitted do
       state :awaiting_review do
@@ -25,11 +26,21 @@ class ActiveRecordTest < Minitest::Test
     state :rejected
     
     attr_accessor :unsubmitted_entered_count
+    attr_accessor :unsubmitted_enter_committed_count
+    attr_accessor :unsubmitted_exit_committed_count
+
     attr_accessor :active_entered_count
+    attr_accessor :active_enter_committed_count
+    attr_accessor :active_exit_committed_count
+
     def initialize(*args)
       super
       @unsubmitted_entered_count = 0
+      @unsubmitted_enter_committed_count = 0
+      @unsubmitted_exit_committed_count = 0
       @active_entered_count = 0
+      @active_enter_committed_count = 0
+      @active_exit_committed_count =0
     end
 
     def will_transition(*args)
@@ -45,6 +56,14 @@ class ActiveRecordTest < Minitest::Test
       def entered
         state_manager.unsubmitted_entered_count += 1
       end
+
+      def enter_committed
+        state_manager.unsubmitted_enter_committed_count += 1
+      end
+
+      def exit_committed
+        state_manager.unsubmitted_exit_committed_count += 1
+      end
       
     end
     
@@ -52,6 +71,14 @@ class ActiveRecordTest < Minitest::Test
       
       def entered
         state_manager.active_entered_count += 1
+      end
+
+      def enter_committed
+        state_manager.active_enter_committed_count += 1
+      end
+
+      def exit_committed
+        state_manager.active_exit_committed_count += 1
       end
       
     end
@@ -61,12 +88,6 @@ class ActiveRecordTest < Minitest::Test
   class Post < ActiveRecord::Base
     extend StateManager::Resource
     state_manager
-  end
-  
-  class Post2 < ActiveRecord::Base
-    self.table_name = 'posts'
-    extend StateManager::Resource
-    state_manager(:state, PostStates, :save_callback => :after_commit)
   end
 
   def exec(sql)
@@ -187,8 +208,8 @@ class ActiveRecordTest < Minitest::Test
     end
   end
   
-  def test_after_commit_callback
-    @resource = Post2.find(1)
+  def test_commit_callbacks
+    @resource = Post.find(1)
     assert_state 'unsubmitted'
     assert !@resource.state_manager.before_callbacks_called
     assert !@resource.state_manager.after_callbacks_called
@@ -196,31 +217,43 @@ class ActiveRecordTest < Minitest::Test
     @resource.transaction do
       @resource.save!
       assert @resource.state_manager.before_callbacks_called
-      assert !@resource.state_manager.after_callbacks_called
+      assert @resource.state_manager.after_callbacks_called
+      assert_equal @resource.state_manager.unsubmitted_enter_committed_count, 0
+      @resource.activate!
+      assert_equal @resource.state_manager.unsubmitted_exit_committed_count, 0
+      assert_equal @resource.state_manager.active_enter_committed_count, 0
     end
-    assert @resource.state_manager.after_callbacks_called
+    assert_equal 1, @resource.state_manager.unsubmitted_enter_committed_count
+    assert_equal 1, @resource.state_manager.unsubmitted_exit_committed_count
+    assert_equal 1, @resource.state_manager.active_enter_committed_count
+    @resource.title = 'blah'
+    @resource.save!
+    assert_equal 1, @resource.state_manager.unsubmitted_enter_committed_count
+    assert_equal 1, @resource.state_manager.unsubmitted_exit_committed_count
+    assert_equal 1, @resource.state_manager.active_enter_committed_count
   end
   
-  def test_after_commit_callback_on_create
-    Post2.transaction do
-      @resource = Post2.new
+  def test_commit_callbacks_on_create
+    Post.transaction do
+      @resource = Post.new
       assert !@resource.state_manager.after_callbacks_called
       @resource.save
-      assert !@resource.state_manager.after_callbacks_called
+      assert @resource.state_manager.after_callbacks_called
+      assert_equal 1, @resource.state_manager.unsubmitted_entered_count
+      assert_equal 0, @resource.state_manager.unsubmitted_enter_committed_count
     end
-    assert_equal @resource.state_manager.unsubmitted_entered_count, 1
-    assert @resource.state_manager.after_callbacks_called
+    assert_equal 1, @resource.state_manager.unsubmitted_enter_committed_count
   end
   
-  def test_after_commit_callback_on_different_initial_state
-    Post2.transaction do
-      @resource = Post2.new(:state => 'active')
+  def test_commit_callbacks_on_different_initial_state
+    Post.transaction do
+      @resource = Post.new(:state => 'active')
       assert !@resource.state_manager.after_callbacks_called
       @resource.save
-      assert !@resource.state_manager.after_callbacks_called
+      assert @resource.state_manager.after_callbacks_called
     end
     assert_equal @resource.state_manager.unsubmitted_entered_count, 0
     assert_equal @resource.state_manager.active_entered_count, 1
-    assert @resource.state_manager.after_callbacks_called
+    assert_equal @resource.state_manager.active_enter_committed_count, 1
   end
 end

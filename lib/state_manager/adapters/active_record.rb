@@ -41,17 +41,12 @@ module StateManager
               before_validation do
                 validate_states!
               end
-              before_save do
-                state_managers.values.map(&:before_save)
-              end
-              
-              save_callback = options[:save_callback] && options[:save_callback].to_sym
-              if save_callback == :after_commit
-                after_commit(:on => :create) { state_managers.values.map(&:after_save) }
-                after_commit(:on => :update) { state_managers.values.map(&:after_save) }
-              else # defaults to after_save
-                after_save { state_managers.values.map(&:after_save) }
-              end
+
+              # Callback hooks
+              after_commit(:on => :create) { state_managers.values.map(&:after_commit) }
+              after_commit(:on => :update) { state_managers.values.map(&:after_commit) }
+              before_save { state_managers.values.map(&:before_save) }
+              after_save { state_managers.values.map(&:after_save) }
             end 
           end
         end
@@ -61,6 +56,7 @@ module StateManager
       module ManagerMethods
 
         attr_accessor :pending_transition
+        attr_accessor :uncommitted_transitions
 
         def self.included(base)
           base.class_eval do
@@ -91,7 +87,19 @@ module StateManager
         def after_save
           return unless pending_transition
           _run_after_callbacks(*pending_transition)
+          self.uncommitted_transitions ||= []
+          self.uncommitted_transitions << self.pending_transition
           self.pending_transition = nil
+        end
+        
+        def after_commit
+          self.uncommitted_transitions.each{ |t| run_commit_callbacks(*t) }
+          self.uncommitted_transitions.clear
+        end
+
+        def run_commit_callbacks(from_state, to_state, current_event, enter_states, exit_states)
+          exit_states.each{ |s| s.exit_committed if s.respond_to? :exit_committed }
+          enter_states.each{ |s| s.enter_committed if s.respond_to? :enter_committed }
         end
 
         def write_state(value)
