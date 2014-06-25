@@ -3,7 +3,6 @@ source "http://rubygems.org"
 gemspec
 
 group :development do
-  gem 'byebug'
   gem "bundler"
   gem 'delayed_job_active_record'
   gem 'activerecord'
