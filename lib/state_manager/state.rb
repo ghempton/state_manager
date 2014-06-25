@@ -143,5 +143,10 @@ module StateManager
     
     attr_writer :name, :states, :parent_state
 
+    def method_missing(name, *args, &block)
+      resource.send(name, *args, &block)
+    end
+
+
   end
 end

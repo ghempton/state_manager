@@ -66,7 +66,7 @@ module StateManager
 
     module InstanceMethods
       def initialize(*args)
-        super(*args)
+        super
         self.state_managers ||= {}
       end
 

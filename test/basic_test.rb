@@ -3,6 +3,9 @@ require 'helper'
 class BasicTest < Minitest::Test
 
   class PostStates < StateManager::Base
+
+    attr_accessor :title
+
     state :unsubmitted do
       event :submit, :transitions_to => 'submitted.awaiting_review'
     end
@@ -20,12 +23,22 @@ class BasicTest < Minitest::Test
     end
     state :active
     state :rejected
+
+    class Active
+      def entered
+        state_manager.title = title
+      end
+    end
+
   end
 
   class Post
+
     attr_accessor :state
     extend StateManager::Resource
     state_manager :state
+
+    attr_accessor :title
   end
 
   class PostWithInitialState
@@ -134,6 +147,13 @@ class BasicTest < Minitest::Test
     assert_state 'submitted.awaiting_review'
     @resource.state_manager.transition_to('submitted.awaiting_review')
     assert_state 'submitted.awaiting_review'
+  end
+
+  def test_property_proxying
+    @resource = Post.new
+    @resource.title = 'some title'
+    @resource.state_manager.transition_to 'active'
+    assert_equal 'some title', @resource.state_manager.title
   end
 
 end
