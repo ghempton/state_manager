@@ -28,8 +28,10 @@ module StateManager
                 # reached so we wrap in a lamda.
                 scope state, lambda {
                   conn = ::ActiveRecord::Base.connection
+                  table = conn.quote_table_name table_name
                   column = conn.quote_column_name klass._state_property
-                  query = "#{column} = ? OR #{column} LIKE ?"
+                  namespaced_col = "#{table}.#{column}"
+                  query = "#{namespaced_col} = ? OR #{namespaced_col} LIKE ?"
                   like_term = "#{state.to_s}.%"
                   where(query, state, like_term)
                 }
