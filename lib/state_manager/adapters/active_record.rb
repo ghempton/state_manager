@@ -88,15 +88,21 @@ module StateManager
 
         def after_save
           return unless pending_transition
-          _run_after_callbacks(*pending_transition)
+          transition = pending_transition
+
           self.uncommitted_transitions ||= []
           self.uncommitted_transitions << self.pending_transition
           self.pending_transition = nil
+
+          _run_after_callbacks(*transition)
         end
         
         def after_commit
-          self.uncommitted_transitions.each{ |t| run_commit_callbacks(*t) }
+          transitions = self.uncommitted_transitions.dup
+          
           self.uncommitted_transitions.clear
+
+          transitions.each{ |t| run_commit_callbacks(*t) }
         end
 
         def run_commit_callbacks(from_state, to_state, current_event, enter_states, exit_states)

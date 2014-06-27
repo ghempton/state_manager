@@ -24,6 +24,7 @@ class ActiveRecordTest < Minitest::Test
     end
     state :active
     state :rejected
+    state :mutated
     
     attr_accessor :unsubmitted_entered_count
     attr_accessor :unsubmitted_enter_committed_count
@@ -81,6 +82,15 @@ class ActiveRecordTest < Minitest::Test
         state_manager.active_exit_committed_count += 1
       end
       
+    end
+
+    class Mutated
+
+      def entered
+        self.title = 'mutant'
+        save
+      end
+
     end
     
   end
@@ -255,5 +265,11 @@ class ActiveRecordTest < Minitest::Test
     assert_equal @resource.state_manager.unsubmitted_entered_count, 0
     assert_equal @resource.state_manager.active_entered_count, 1
     assert_equal @resource.state_manager.active_enter_committed_count, 1
+  end
+
+  def test_save_in_entered_callback
+    @resource = Post.new(:state => 'mutated')
+    @resource.save
+    assert_equal 'mutant', @resource.title
   end
 end
