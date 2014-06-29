@@ -74,7 +74,12 @@ module StateManager
             def run_after_callbacks(*args)
             end
           end
-        end  
+        end
+
+        def initialize(*)
+          super
+          self.uncommitted_transitions = []
+        end
 
         def transition_to(*args)
           raise(DirtyTransition, "Only one state transition may be performed before saving a record. This error could be caused by the record being initialized to a default state.") if pending_transition
@@ -90,7 +95,6 @@ module StateManager
           return unless pending_transition
           transition = pending_transition
 
-          self.uncommitted_transitions ||= []
           self.uncommitted_transitions << self.pending_transition
           self.pending_transition = nil
 
