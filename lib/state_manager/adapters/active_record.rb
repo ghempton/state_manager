@@ -119,7 +119,7 @@ module StateManager
         end
 
         def persist_state
-          resource.save
+          resource.save!
         end
         
         def perform_initial_transition?
