@@ -73,6 +73,14 @@ module StateManager
 
             def run_after_callbacks(*args)
             end
+            
+            def send_event_with_lock!(*args)
+              resource.with_lock do
+                send_event_without_lock!(*args)
+              end
+            end
+            alias_method_chain :send_event!, :lock
+            
           end
         end
 
