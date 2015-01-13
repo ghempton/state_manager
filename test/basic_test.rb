@@ -5,6 +5,12 @@ class BasicTest < Minitest::Test
   class PostStates < StateManager::Base
 
     attr_accessor :title
+    attr_accessor :around_hit
+    
+    def initialize(*args)
+      super
+      @around_hit = 0
+    end
 
     state :unsubmitted do
       event :submit, :transitions_to => 'submitted.awaiting_review'
@@ -28,6 +34,11 @@ class BasicTest < Minitest::Test
       def entered
         state_manager.title = title
       end
+    end
+    
+    def around_event(name, *args)
+      @around_hit += 1
+      yield
     end
 
   end
@@ -154,6 +165,11 @@ class BasicTest < Minitest::Test
     @resource.title = 'some title'
     @resource.state_manager.transition_to 'active'
     assert_equal 'some title', @resource.state_manager.title
+  end
+
+  def test_around_event
+    @resource.state_manager.send_event! :submit
+    assert_equal 1, @resource.state_manager.around_hit
   end
 
 end

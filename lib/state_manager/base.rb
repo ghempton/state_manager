@@ -83,9 +83,11 @@ module StateManager
     end
 
     def send_event!(name, *args)
-      result = send_event(name, *args)
-      persist_state
-      result
+      around_event(name, *args) do
+        result = send_event(name, *args)
+        persist_state
+        result
+      end
     end
 
     def send_event(name, *args)
@@ -152,6 +154,10 @@ module StateManager
     end
 
     def did_transition(from, to, event)
+    end
+    
+    def around_event(event, *args, &block)
+      yield
     end
 
     # All events the current state will respond to
