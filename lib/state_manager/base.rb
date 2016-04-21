@@ -1,5 +1,5 @@
 module StateManager
- 
+
   class StateNotFound < StandardError; end;
   class InvalidEvent < StandardError; end;
   class InvalidTransition < StandardError; end;
@@ -25,7 +25,7 @@ module StateManager
         transition_to initial_path, nil
       end
     end
-    
+
     # In the case of a new model, we wan't to transition into the initial state
     # and fire the appropriate callbacks. The default behavior is to just check
     # if the state field is nil.
@@ -46,7 +46,7 @@ module StateManager
       while(!new_states) do
         exit_states << state
         state = state.parent_state
-        raise(StateNotFound, path) unless state
+        raise(StateNotFound, transition_error(path)) unless state
         new_states = state.find_states(path)
       end
 
@@ -55,7 +55,7 @@ module StateManager
 
       # Can only transition to leaf states
       # TODO: transition to the initial_state of the state?
-      raise(InvalidTransition, path) unless new_states.last.leaf?
+      raise(InvalidTransition, transition_error(path)) unless new_states.last.leaf?
 
       enter_states = new_states - exit_states
       exit_states = exit_states - new_states
@@ -93,7 +93,8 @@ module StateManager
     def send_event(name, *args)
       self.current_event = name
       state = find_state_for_event(name)
-      raise(InvalidEvent, name) unless state
+
+      raise(InvalidEvent, transition_error(name)) unless state
       result = state.perform_event name, *args
       self.current_event = nil
       result
@@ -130,7 +131,7 @@ module StateManager
     #     state_manager.in_state? 'inner' # false
     #
     def in_state?(path)
-      self.find_states(current_state.path).include? find_state(path) 
+      self.find_states(current_state.path).include? find_state(path)
     end
 
     # Will not have a state if the state is invalid or nil
@@ -155,7 +156,7 @@ module StateManager
 
     def did_transition(from, to, event)
     end
-    
+
     def around_event(event, *args, &block)
       yield
     end
@@ -185,6 +186,10 @@ module StateManager
     end
 
     def self.added_to_resource(klass, property, options)
+    end
+
+    def transition_error(state)
+      "Unable to transition from #{current_state} to #{state}"
     end
 
     protected

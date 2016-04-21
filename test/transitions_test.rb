@@ -168,4 +168,26 @@ class TransitionsTest < Minitest::Test
     assert_equal :ban, @resource.state_manager.did_event
   end
 
+  def error_message_test(klass, state)
+    @resource.ban!
+    exp = "StateManager::#{klass}".constantize
+    begin
+      @resource.state_manager.transition_to(state)
+    rescue exp => e
+      assert_equal "Unable to transition from inactive.banned to #{state}", e.message
+    end
+  end
+
+  def test_invalid_event
+    error_message_test("InvalidEvent", "active.default")
+  end
+
+  def test_state_not_found
+    error_message_test("StateNotFound", "brodown")
+  end
+
+  def test_invalid_transition
+    error_message_test("InvalidTransition", "active")
+  end
+
 end
