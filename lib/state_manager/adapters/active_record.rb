@@ -19,11 +19,11 @@ module StateManager
         def _validate_states
           self.validate_states!
         end
-        
+
         module ClassMethods
           def state_manager_added(property, klass, options)
             class_eval do
-              klass.specification.states.keys.each do |state|
+              klass.specification.states.each do |state, specification_klass|
                 # The connection might not be ready when defining this code is
                 # reached so we wrap in a lamda.
                 scope state, lambda {
@@ -31,12 +31,12 @@ module StateManager
                   table = conn.quote_table_name table_name
                   column = conn.quote_column_name klass._state_property
                   namespaced_col = "#{table}.#{column}"
-                  query = "#{namespaced_col} = ? OR #{namespaced_col} LIKE ?"
-                  like_term = "#{state.to_s}.%"
-                  where(query, state, like_term)
+                  states = [state].concat specification_klass.specification.descendant_names.map{|s| "#{state}.#{s}"}
+                  query = "#{namespaced_col} in (?)"
+                  where(query, states)
                 }
               end
-              
+
               after_initialize do
                 self.state_managers ||= {}
               end
@@ -49,7 +49,7 @@ module StateManager
               after_commit(:on => :update) { state_managers.values.map(&:after_commit) }
               before_save { state_managers.values.map(&:before_save) }
               after_save { state_managers.values.map(&:after_save) }
-            end 
+            end
           end
         end
 
@@ -73,7 +73,7 @@ module StateManager
 
             def run_after_callbacks(*args)
             end
-            
+
           end
         end
 
@@ -101,10 +101,10 @@ module StateManager
 
           _run_after_callbacks(*transition)
         end
-        
+
         def after_commit
           transitions = self.uncommitted_transitions.dup
-          
+
           self.uncommitted_transitions.clear
 
           transitions.each{ |t| run_commit_callbacks(*t) }
@@ -122,7 +122,7 @@ module StateManager
         def persist_state
           resource.save!
         end
-        
+
         def perform_initial_transition?
           !current_state || resource.new_record?
         end

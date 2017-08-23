@@ -25,7 +25,7 @@ class ActiveRecordTest < Minitest::Test
     state :active
     state :rejected
     state :mutated
-    
+
     attr_accessor :unsubmitted_entered_count
     attr_accessor :unsubmitted_enter_committed_count
     attr_accessor :unsubmitted_exit_committed_count
@@ -51,9 +51,9 @@ class ActiveRecordTest < Minitest::Test
     def did_transition(*args)
       self.after_callbacks_called = true
     end
-    
+
     class Unsubmitted
-      
+
       def entered
         state_manager.unsubmitted_entered_count += 1
       end
@@ -65,11 +65,11 @@ class ActiveRecordTest < Minitest::Test
       def exit_committed
         state_manager.unsubmitted_exit_committed_count += 1
       end
-      
+
     end
-    
+
     class Active
-      
+
       def entered
         state_manager.active_entered_count += 1
       end
@@ -81,7 +81,7 @@ class ActiveRecordTest < Minitest::Test
       def exit_committed
         state_manager.active_exit_committed_count += 1
       end
-      
+
     end
 
     class Mutated
@@ -92,7 +92,7 @@ class ActiveRecordTest < Minitest::Test
       end
 
     end
-    
+
   end
 
   class Post < ActiveRecord::Base
@@ -195,8 +195,8 @@ class ActiveRecordTest < Minitest::Test
 
     # +1 from setup
     assert_equal 1, Post.unsubmitted.count
-    # +2 from setup
-    assert_equal 8, Post.submitted.count
+    # +1 from setup (one is in a bad state)
+    assert_equal 7, Post.submitted.count
     assert_equal 4, Post.active.count
     assert_equal 0, Post.rejected.count
   end
@@ -217,7 +217,7 @@ class ActiveRecordTest < Minitest::Test
       @resource.state_manager.send_event :review
     end
   end
-  
+
   def test_commit_callbacks
     @resource = Post.find(1)
     assert_state 'unsubmitted'
@@ -242,7 +242,7 @@ class ActiveRecordTest < Minitest::Test
     assert_equal 1, @resource.state_manager.unsubmitted_exit_committed_count
     assert_equal 1, @resource.state_manager.active_enter_committed_count
   end
-  
+
   def test_commit_callbacks_on_create
     Post.transaction do
       @resource = Post.new
@@ -254,7 +254,7 @@ class ActiveRecordTest < Minitest::Test
     end
     assert_equal 1, @resource.state_manager.unsubmitted_enter_committed_count
   end
-  
+
   def test_commit_callbacks_on_different_initial_state
     Post.transaction do
       @resource = Post.new(:state => 'active')
