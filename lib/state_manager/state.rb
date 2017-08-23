@@ -18,6 +18,15 @@ module StateManager
         self.states = source.states.dup
         self.events = source.events.dup
       end
+
+      def descendant_names
+        res = []
+        states.each do |state, specification_klass|
+          res << state
+          res.concat specification_klass.specification.descendant_names.map{|s| "#{state}.#{s}"}
+        end
+        res
+      end
     end
 
     class_attribute :specification
@@ -140,7 +149,7 @@ module StateManager
     end
 
     protected
-    
+
     attr_writer :name, :states, :parent_state
 
     def method_missing(name, *args, &block)
