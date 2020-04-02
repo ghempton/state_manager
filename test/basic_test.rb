@@ -130,6 +130,20 @@ class BasicTest < Minitest::Test
     @resource.state_manager.send_event! :review
   end
 
+  def test_force_events
+    @resource.state_manager.force_send_event! :submit
+
+    assert_equal @resource.state_manager.current_state.path, 'submitted.awaiting_review', 'state should have transitioned'
+    assert_equal @resource.state, 'submitted.awaiting_review', 'state should have been written'
+
+    assert_raises StateManager::InvalidEvent do
+      @resource.state_manager.force_send_event! :submit
+    end
+    assert_equal @resource.state, 'submitted.awaiting_review', 'state should not have changed'
+
+    @resource.state_manager.force_send_event! :review
+  end
+
   def test_alternate_property
     @resource = PostWithCustomProperty.new
     assert_state 'unsubmitted', @resource.workflow_state_manager
@@ -169,6 +183,11 @@ class BasicTest < Minitest::Test
 
   def test_around_event
     @resource.state_manager.send_event! :submit
+    assert_equal 1, @resource.state_manager.around_hit
+  end
+
+  def test_around_force_event
+    @resource.state_manager.force_send_event! :submit
     assert_equal 1, @resource.state_manager.around_hit
   end
 

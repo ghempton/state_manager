@@ -119,8 +119,12 @@ module StateManager
           resource.send :write_attribute, self.class._state_property, value.path
         end
 
-        def persist_state
-          resource.save!
+        def persist_state(force = false)
+          if force
+            resource.save!(validate: false)
+          else
+            resource.save!
+          end
         end
 
         def perform_initial_transition?

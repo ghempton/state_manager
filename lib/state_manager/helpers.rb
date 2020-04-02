@@ -18,6 +18,11 @@ module StateManager
         end
 
         specification.events.each do |name, event|
+          target_class.send :define_method, "force_#{name.to_s}!" do | *args |
+            state_manager = instance_eval &sm_proc
+            state_manager.force_send_event! name, *args
+          end
+
           target_class.send :define_method, "#{name.to_s}!" do | *args |
             state_manager = instance_eval &sm_proc
             state_manager.send_event! name, *args

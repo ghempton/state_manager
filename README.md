@@ -135,6 +135,7 @@ post.state_manager.in_state?('unsubmitted') # true, the post will initially be i
 post.state_manager.respond_to_event?('submit') # true, the 'submit' event is defined on the current state
 post.state_manager.respond_to_event?('review')? # false, the 'review' event is not defined on the current state
 post.state_manager.send_event!('submit') # invokes the submit event
+post.state_manager.force_send_event!('submit') # invokes the submit event, skipping any validation
 post.state_manager.in_state?('submitted.awaiting_review')? # true, the post is in the 'submitted.awaiting_review' state
 post.state_manager.in_state?('submitted')? # true, the 'submitted' state is a parent of the current state
 ```

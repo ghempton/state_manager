@@ -82,6 +82,14 @@ module StateManager
       write_state(value)
     end
 
+    def force_send_event!(name, *args)
+      around_event(name, *args) do
+        result = send_event(name, *args)
+        persist_state(true)
+        result
+      end
+    end
+
     def send_event!(name, *args)
       around_event(name, *args) do
         result = send_event(name, *args)
@@ -148,7 +156,7 @@ module StateManager
       resource.send self.class._state_property
     end
 
-    def persist_state
+    def persist_state(force = false)
     end
 
     def will_transition(from, to, event)
